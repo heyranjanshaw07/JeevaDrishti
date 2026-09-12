@@ -1,0 +1,39 @@
+# Python & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Secrets & Environment
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+
+# Database & Uploads
+*.db
+*.sqlite
+*.sqlite3
+uploads/
+*.log
+
+# Testing & Cache
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+
+# Model Checkpoints (large files mounted via volume)
+*.pth
+*.pt
+*.bin
+*.onnx
+models/

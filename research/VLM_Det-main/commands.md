@@ -1,0 +1,1 @@
+python analysis.py --pred-root "/work/mech-ai-scratch/shreyang/FSOD/results/exp1_gemini_2_5_flash_non_thinking" --out-dir "/work/mech-ai-scratch/shreyang/FSOD/results/analysis/exp1_gemini_2_5_flash_non_thinking" --gt-root "/work/mech-ai-scratch/shreyang/FSOD/sampled_dataset/dataset_53_v1" --num-iou 50
