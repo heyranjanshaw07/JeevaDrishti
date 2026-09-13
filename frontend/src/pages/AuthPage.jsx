@@ -99,7 +99,7 @@ function GoogleIcon({ className = 'w-5 h-5' }) {
 export default function AuthPage({ initialMode = 'login' }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login } = useAppStore()
+  const { isAuthenticated, login } = useAppStore()
 
   // Authentication Visual Stage: 'eye' | 'transitioning-to-login' | 'login' | 'transitioning-to-eye'
   const [authStage, setAuthStage] = useState('eye')
@@ -125,6 +125,13 @@ export default function AuthPage({ initialMode = 'login' }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [isTransitioning, setIsTransitioning] = useState(false)
+
+  // If user is already authenticated, redirect to dashboard (unless completing login transition)
+  useEffect(() => {
+    if (isAuthenticated && !isTransitioning) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [isAuthenticated, isTransitioning, navigate])
 
   // Sync mode with route if navigating directly
   useEffect(() => {

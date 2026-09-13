@@ -4,8 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Microscope, ArrowRight, Menu, X, Sparkles } from 'lucide-react'
 import Button from './Button'
 import StatusBadge from './StatusBadge'
+import { useAppStore } from '@/store/appStore'
 
 export default function LandingNavbar() {
+  const { isAuthenticated } = useAppStore()
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -83,13 +85,21 @@ export default function LandingNavbar() {
 
           {/* ─── Right: Actions ──────────────────────────────────────────── */}
           <div className="hidden sm:flex items-center gap-3">
-            <Link to="/login">
-              <Button variant="ghost" size="sm">
-                Sign In
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/dashboard">
+                <Button variant="ghost" size="sm">
+                  Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/login">
+                <Button variant="ghost" size="sm">
+                  Sign In
+                </Button>
+              </Link>
+            )}
 
-            <Link to="/analyze">
+            <Link to={isAuthenticated ? "/analyze" : "/login"}>
               <Button variant="primary" size="sm" iconRight={ArrowRight}>
                 Get Started
               </Button>
@@ -98,7 +108,7 @@ export default function LandingNavbar() {
 
           {/* ─── Mobile Hamburger Toggle ─────────────────────────────────── */}
           <div className="sm:hidden flex items-center gap-2">
-            <Link to="/analyze">
+            <Link to={isAuthenticated ? "/analyze" : "/login"}>
               <Button variant="primary" size="sm">
                 Start
               </Button>
@@ -135,12 +145,20 @@ export default function LandingNavbar() {
                 </a>
               ))}
               <div className="pt-2 flex items-center gap-2 border-t border-white/[0.06]">
-                <Link to="/login" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="secondary" size="sm" className="w-full">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/analyze" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                {isAuthenticated ? (
+                  <Link to="/dashboard" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="secondary" size="sm" className="w-full">
+                      Dashboard
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link to="/login" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="secondary" size="sm" className="w-full">
+                      Sign In
+                    </Button>
+                  </Link>
+                )}
+                <Link to={isAuthenticated ? "/analyze" : "/login"} className="flex-1" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="primary" size="sm" className="w-full" iconRight={ArrowRight}>
                     Get Started
                   </Button>

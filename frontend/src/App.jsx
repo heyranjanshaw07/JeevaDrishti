@@ -17,6 +17,7 @@ import ResearchInsights from '@/pages/ResearchInsights'
 import Experiments from '@/pages/Experiments'
 import Settings from '@/pages/Settings'
 import About from '@/pages/About'
+import ProtectedRoute from '@/components/auth/ProtectedRoute'
 
 export default function App() {
   const location = useLocation()
@@ -28,17 +29,32 @@ export default function App() {
           {/* 1. Landing */}
           <Route path="/" element={<Landing />} />
 
-          {/* 2. Login */}
+          {/* 2. Login & Iris Fullscreen Experience */}
           <Route path="/login" element={<Login />} />
+          <Route path="/iris" element={<Login />} />
 
           {/* 3. Signup */}
           <Route path="/signup" element={<Signup />} />
 
-          {/* 4. Dashboard */}
-          <Route path="/dashboard" element={<Dashboard />} />
+          {/* 4. Dashboard (Protected) */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* 5. Analyze */}
-          <Route path="/analyze" element={<Analyze />} />
+          {/* 5. Analyze (Protected) */}
+          <Route
+            path="/analyze"
+            element={
+              <ProtectedRoute>
+                <Analyze />
+              </ProtectedRoute>
+            }
+          />
 
           {/* 6. Benchmark */}
           <Route path="/benchmark" element={<Benchmark />} />
@@ -59,7 +75,14 @@ export default function App() {
 
           {/* 10. System */}
           <Route path="/about" element={<About />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

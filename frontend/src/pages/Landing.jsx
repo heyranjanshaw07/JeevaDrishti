@@ -13,7 +13,7 @@ import GlobalFooter from '@/components/ui/GlobalFooter'
 import GlassCard from '@/components/ui/GlassCard'
 import Button from '@/components/ui/Button'
 import StatusBadge from '@/components/ui/StatusBadge'
-import MicroscopyTransition from '@/components/transitions/MicroscopyTransition'
+import { useAppStore } from '@/store/appStore'
 import { MOCK_DATASETS, MOCK_BENCHMARK_DATA } from '@/services/api'
 import { fadeInUpVariants, staggerContainerVariants } from '@/components/transitions/motionVariants'
 
@@ -104,9 +104,9 @@ const SHOT_SCALING = [
 export default function Landing() {
   const navigate = useNavigate()
   const shouldReduceMotion = useReducedMotion()
+  const { isAuthenticated } = useAppStore()
   const [selectedShot, setSelectedShot] = useState('6-shot')
   const [activePromptIndex, setActivePromptIndex] = useState(0)
-  const [isTransitioning, setIsTransitioning] = useState(false)
 
   const samplePrompts = [
     'Identify all polymorphonuclear neutrophils with multi-lobed chromatin nuclei in BCCD blood smear.',
@@ -116,7 +116,11 @@ export default function Landing() {
 
   const handleStartAnalysis = (e) => {
     if (e) e.preventDefault()
-    setIsTransitioning(true)
+    if (isAuthenticated) {
+      navigate('/analyze')
+    } else {
+      navigate('/login')
+    }
   }
 
   return (
@@ -349,7 +353,7 @@ export default function Landing() {
                 </li>
               ))}
             </ul>
-            <Link to="/analyze">
+            <Link to={isAuthenticated ? "/analyze" : "/login"}>
               <Button variant="primary" iconRight={ArrowRight}>
                 Try Zero-Shot Prompting
               </Button>
@@ -734,11 +738,14 @@ export default function Landing() {
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <Link to="/analyze">
-                <Button variant="primary" size="lg" iconRight={ArrowRight}>
-                  Start Analysis Now
-                </Button>
-              </Link>
+              <Button
+                variant="primary"
+                size="lg"
+                iconRight={ArrowRight}
+                onClick={handleStartAnalysis}
+              >
+                Start Analysis Now
+              </Button>
               <Link to="/benchmark">
                 <Button variant="secondary" size="lg" icon={BarChart3}>
                   Explore Benchmarks
@@ -751,12 +758,6 @@ export default function Landing() {
 
       {/* ─── Standard Global Footer ─── */}
       <GlobalFooter />
-
-      {/* ─── Signature Laboratory Optical Transition to Analysis ──────── */}
-      <MicroscopyTransition
-        active={isTransitioning}
-        onComplete={() => navigate('/analyze')}
-      />
     </div>
   )
 }
