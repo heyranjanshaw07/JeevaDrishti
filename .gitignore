@@ -33,7 +33,8 @@ reports/
 # Large Datasets & Benchmark Imagery
 datasets/
 Micro-OD/
-data/
+/data/
+!frontend/src/data/**
 dataset/
 sampled_dataset/
 *.zip
