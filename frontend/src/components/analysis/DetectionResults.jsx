@@ -11,7 +11,6 @@ import { openAnalysisReport } from '@/services/api'
 import DetectionOverlay from './DetectionOverlay'
 import DetectionSummary from './DetectionSummary'
 import DetectionList from './DetectionList'
-import PipelineStatus from './PipelineStatus'
 
 /**
  * DetectionResults — Master Interface for Cell-Level Microscopy Inference
@@ -341,9 +340,6 @@ export default function DetectionResults({
           results={results}
         />
       </GlassCard>
-
-      {/* ─── 7. ANALYSIS PIPELINE STATUS ──────────────────────────────── */}
-      <PipelineStatus status={pipelineStatus} />
 
       {/* ─── 5. CELL DETECTION LIST (Table/Cards) ─────────────────────── */}
       <DetectionList detections={results?.detections || []} />

@@ -14,7 +14,6 @@ import Button from '@/components/ui/Button'
 import AppSidebar from '@/components/navigation/AppSidebar'
 import MicroscopyViewer from '@/components/analysis/MicroscopyViewer'
 import AnalysisConfig from '@/components/analysis/AnalysisConfig'
-import DetectionPipeline from '@/components/analysis/DetectionPipeline'
 import DetectionResults from '@/components/analysis/DetectionResults'
 import { runFullPipeline, ensureSessionToken } from '@/services/api'
 import { useAppStore } from '@/store/appStore'
@@ -364,12 +363,12 @@ export default function Analyze() {
               />
             </motion.div>
 
-            {/* RIGHT — Configuration & Pipeline Status (Span 5) */}
+            {/* RIGHT — Configuration (Span 5) */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.35, ease: 'easeOut' }}
-              className="lg:col-span-5 space-y-6"
+              className="lg:col-span-5 flex flex-col justify-center"
             >
               {/* Configuration Panel */}
               <AnalysisConfig
@@ -382,15 +381,6 @@ export default function Analyze() {
                 isReady={Boolean(previewUrl)}
                 onRun={handleRunAnalysis}
                 isRunning={isRunning}
-              />
-
-              {/* 3. Analysis Status Panel / Pipeline Visualizer */}
-              <DetectionPipeline
-                activeStep={
-                  isRunning
-                    ? (pipelineStage === 'uploading' ? 0 : pipelineStage === 'creating' ? 1 : pipelineStage === 'running' ? 3 : 4)
-                    : analysisResults.status === 'complete' ? 5 : 0
-                }
               />
             </motion.div>
           </div>
