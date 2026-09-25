@@ -36,7 +36,7 @@ export default function Analyze() {
   }, [])
 
   // Workbench Form State
-  const [selectedDataset, setSelectedDataset] = useState('micro_od')
+  const [selectedDataset, setSelectedDataset] = useState('auto')
   const [selectedShotMode, setSelectedShotMode] = useState('6 Shot')
   const [selectedModel, setSelectedModel] = useState('optical')
   const [selectedFile, setSelectedFile] = useState(null)
@@ -327,19 +327,20 @@ export default function Analyze() {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-crimson/10 border border-crimson/30 text-xs font-mono text-crimson uppercase tracking-wider font-semibold mb-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-crimson shadow-[0_0_6px_#FF2A55]" />
-                <span>RESEARCH WORKBENCH</span>
+                <span>DIAGNOSTIC WORKBENCH</span>
               </div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-extrabold text-white tracking-tight">
                 Microscopy Analysis
               </h1>
               <p className="text-sm sm:text-base text-text-secondary mt-1.5 max-w-2xl leading-relaxed">
-                Analyze cellular morphology using zero-shot and few-shot vision-language inference.
+                Upload a microscopy specimen for automated cellular detection, classification, and diagnostic review.
               </p>
             </div>
 
             <div className="flex items-center gap-2 self-start sm:self-center">
-              <span className="text-xs sm:text-sm font-mono text-white/70 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08]">
-                ENGINE: <span className="text-white font-bold">HYBRID SAM + VLM</span>
+              <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-mono text-white/80 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08]">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                AI ASSIST: <span className="text-white font-bold">AUTOMATED SCAN</span>
               </span>
             </div>
           </motion.div>
@@ -360,7 +361,6 @@ export default function Analyze() {
                 preview={previewUrl}
                 onFileSelect={handleFileSelect}
                 onClear={handleClearImage}
-                currentDataset={selectedDataset}
               />
             </motion.div>
 
@@ -419,46 +419,6 @@ export default function Analyze() {
                   : 'Ready'
               }
             />
-          </motion.div>
-
-          {/* ─────────────────────────────────────────────────────────────
-              5. RESEARCH CONTEXT CARD
-          ───────────────────────────────────────────────────────────── */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.45, delay: 0.1, ease: 'easeOut' }}
-          >
-            <GlassCard className="p-6 border-white/[0.08] hover:border-crimson/30 transition-all duration-300" hover glow>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1.5 max-w-2xl">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Sparkles size={18} className="text-crimson" />
-                    <h4 className="text-base font-heading font-bold text-white tracking-wide">
-                      Few-Shot Cell Detection
-                    </h4>
-                  </div>
-                  <p className="text-sm text-text-secondary leading-relaxed">
-                    Compare model behavior across 0, 1, 3 and 6-shot configurations.
-                  </p>
-                  <p className="text-xs sm:text-sm font-mono text-white/60 pt-1">
-                    Standardized evaluation grounded on the{' '}
-                    <strong className="text-white font-semibold">Micro-OD Benchmark</strong> suite.
-                  </p>
-                </div>
-
-                <Button
-                  variant="secondary"
-                  size="md"
-                  iconRight={ArrowRight}
-                  onClick={() => navigate('/benchmark')}
-                  className="shrink-0 hover:border-crimson/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-sm font-mono font-semibold"
-                >
-                  VIEW BENCHMARKS →
-                </Button>
-              </div>
-            </GlassCard>
           </motion.div>
         </main>
       </div>

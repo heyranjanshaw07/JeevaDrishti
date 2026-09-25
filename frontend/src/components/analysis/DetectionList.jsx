@@ -35,6 +35,7 @@ export default function DetectionList({ detections = [] }) {
               <tr className="border-b border-white/[0.08] text-xs uppercase text-text-muted font-bold tracking-wider">
                 <th className="py-3 px-3.5">#</th>
                 <th className="py-3 px-3.5">Cell Type</th>
+                <th className="py-3 px-3.5">Region Priority</th>
                 <th className="py-3 px-3.5">Confidence</th>
                 <th className="py-3 px-3.5">Bounding Box</th>
                 <th className="py-3 px-3.5 text-right">Status</th>
@@ -51,6 +52,24 @@ export default function DetectionList({ detections = [] }) {
                   ? `[${cell.bbox.map((v) => Math.round(v)).join(', ')}]`
                   : cell.bbox || '—'
 
+                const labelLower = (cell.label || '').toLowerCase()
+                const isHighPriority =
+                  labelLower.includes('blast') ||
+                  labelLower.includes('dyskeratotic') ||
+                  labelLower.includes('koilocytotic') ||
+                  labelLower.includes('sickle') ||
+                  labelLower.includes('infect') ||
+                  labelLower.includes('ring') ||
+                  labelLower.includes('trophozoite') ||
+                  labelLower.includes('schizont') ||
+                  labelLower.includes('gametocyte')
+
+                const isModerate =
+                  labelLower.includes('metaplastic') ||
+                  labelLower.includes('parabasal') ||
+                  labelLower.includes('thalassemia') ||
+                  labelLower.includes('white blood cell')
+
                 return (
                   <tr
                     key={idx}
@@ -63,6 +82,20 @@ export default function DetectionList({ detections = [] }) {
                         style={{ backgroundColor: classConfig.color }}
                       />
                       <span className="font-semibold text-white">{cell.label}</span>
+                    </td>
+                    <td className="py-3.5 px-3.5">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono font-bold uppercase ${
+                        isHighPriority
+                          ? 'bg-crimson/15 text-crimson border border-crimson/30'
+                          : isModerate
+                          ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                          : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          isHighPriority ? 'bg-crimson animate-pulse' : isModerate ? 'bg-amber-400' : 'bg-emerald-400'
+                        }`} />
+                        {isHighPriority ? 'High Priority' : isModerate ? 'Moderate' : 'Routine'}
+                      </span>
                     </td>
                     <td className="py-3.5 px-3.5">
                       <span className="text-crimson font-bold">

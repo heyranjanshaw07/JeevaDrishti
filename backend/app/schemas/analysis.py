@@ -3,6 +3,7 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 SUPPORTED_DATASETS = (
+    "auto",
     "micro_od",
     "Micro-OD",
     "nih_nlm_malaria",
@@ -17,6 +18,7 @@ SUPPORTED_DATASETS = (
 SUPPORTED_SHOTS = (0, 6)
 
 DatasetType = Literal[
+    "auto",
     "micro_od",
     "Micro-OD",
     "nih_nlm_malaria",
@@ -46,12 +48,12 @@ class AnalysisCreate(BaseModel):
 
     file_id: str = Field(..., description="ID of previously uploaded image file")
     dataset: DatasetType = Field(
-        ...,
-        description="Supported dataset profile: Micro-OD, BBBC, BCCD, LIVECell, NIH-3T3",
+        "auto",
+        description="Supported dataset profile or 'auto' for automated domain recognition",
     )
     shots: ShotType = Field(
-        0,
-        description="Few-shot exemplar configuration: 0 or 6 shots",
+        6,
+        description="Few-shot exemplar configuration: 0 or 6 shots (default 6)",
     )
     vlm_model: str = Field(
         "default",

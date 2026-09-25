@@ -11,7 +11,6 @@ import { openAnalysisReport } from '@/services/api'
 import DetectionOverlay from './DetectionOverlay'
 import DetectionSummary from './DetectionSummary'
 import DetectionList from './DetectionList'
-import FewShotComparison from './FewShotComparison'
 import PipelineStatus from './PipelineStatus'
 
 /**
@@ -346,20 +345,13 @@ export default function DetectionResults({
       {/* ─── 7. ANALYSIS PIPELINE STATUS ──────────────────────────────── */}
       <PipelineStatus status={pipelineStatus} />
 
-      {/* ─── 6. FEW-SHOT COMPARISON ───────────────────────────────────── */}
-      <FewShotComparison
-        selectedShot={shotMode}
-        onSelectShot={onShotModeChange}
-        shotMetrics={results?.shotMetrics}
-      />
-
       {/* ─── 5. CELL DETECTION LIST (Table/Cards) ─────────────────────── */}
       <DetectionList detections={results?.detections || []} />
 
-      {/* ─── 9 & 10. EXPORT RESULTS & RESEARCH CONTEXT ────────────────── */}
+      {/* ─── 9 & 10. EXPORT RESULTS & HUMAN REVIEW GUIDANCE ─────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* 9. EXPORT RESULTS AREA (Span 7) */}
-        <div className="lg:col-span-7">
+        {/* 9. EXPORT RESULTS AREA (Span 6) */}
+        <div className="lg:col-span-6">
           <GlassCard className="p-5 sm:p-6 border-white/[0.08] flex flex-col justify-between h-full" glow>
             <div>
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.06]">
@@ -374,7 +366,7 @@ export default function DetectionResults({
                 </span>
               </div>
               <p className="text-xs text-text-secondary mb-4 leading-relaxed">
-                Download verified detection overlays, raw coordinates (JSON), or a compiled research report.
+                Download verified detection overlays, raw coordinates (JSON), or a compiled research and clinical report.
               </p>
             </div>
 
@@ -408,30 +400,41 @@ export default function DetectionResults({
           </GlassCard>
         </div>
 
-        {/* 10. RESEARCH CONTEXT CARD (Span 5) */}
-        <div className="lg:col-span-5">
+        {/* 10. HUMAN REVIEW GUIDANCE CARD (Span 6) */}
+        <div className="lg:col-span-6">
           <GlassCard className="p-5 sm:p-6 border-white/[0.08] flex flex-col justify-between h-full" glow>
             <div>
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
-                  <Sparkles size={15} className="text-crimson" />
+                  <ShieldCheck size={16} className="text-crimson" />
                   <h4 className="text-xs font-heading font-bold text-white tracking-wider uppercase">
-                    RESEARCH CONTEXT
+                    HUMAN REVIEW GUIDANCE
                   </h4>
                 </div>
-                <span className="text-[10px] font-mono text-crimson">
-                  FEW-SHOT VLM
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase">
+                  PATHOLOGIST TRIAGE
                 </span>
               </div>
-              <p className="text-xs text-text-secondary leading-relaxed mb-3">
-                Few-shot prompting evaluates whether visual examples improve cell detection for previously unseen microscopy classes.
-              </p>
+              <ul className="text-xs text-text-secondary leading-relaxed space-y-2 mb-3">
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-crimson shrink-0 mt-1.5" />
+                  <span>Verify all flagged high-priority regions against cytological reference standards.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-crimson shrink-0 mt-1.5" />
+                  <span>Cross-reference automated cell counts with clinical smear findings and patient history.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-crimson shrink-0 mt-1.5" />
+                  <span>JeevaDrishti provides AI diagnostic decision-support; qualified pathologist validation is required.</span>
+                </li>
+              </ul>
             </div>
 
             <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono">
-              <span className="text-text-muted">Configurations</span>
-              <span className="text-white font-bold tracking-wider">
-                0 / 6 shots
+              <span className="text-text-muted">Review Status</span>
+              <span className="text-amber-400 font-bold tracking-wider uppercase">
+                {isComplete ? 'Awaiting Human Verification' : 'Pending Inference'}
               </span>
             </div>
           </GlassCard>

@@ -47,11 +47,24 @@ def create_analysis(
             detail="Access forbidden: file belongs to another researcher.",
         )
 
-    # 4. Create Analysis record
+    # 4. Resolve automatic dataset if requested
+    resolved_dataset = analysis_in.dataset
+    if resolved_dataset in ("auto", "auto_detect", None, ""):
+        from app.services.inference.domain_classifier import determine_microscopy_domain
+        from app.core.config import settings
+
+        file_path = settings.upload_path / file_record.stored_filename
+        if file_path.exists():
+            det_ds, _, _ = determine_microscopy_domain(file_path)
+            resolved_dataset = det_ds
+        else:
+            resolved_dataset = "micro_od"
+
+    # 5. Create Analysis record
     analysis = Analysis(
         user_id=user_id,
         file_id=analysis_in.file_id,
-        dataset=analysis_in.dataset,
+        dataset=resolved_dataset,
         shots=analysis_in.shots,
         vlm_model=analysis_in.vlm_model,
         status="pending",
@@ -201,6 +214,13 @@ def execute_analysis(
         db.commit()
         db.refresh(analysis)
         return analysis
+
+    if analysis.dataset in ("auto", "auto_detect", None, ""):
+        from app.services.inference.domain_classifier import determine_microscopy_domain
+        det_ds, _, _ = determine_microscopy_domain(file_path)
+        analysis.dataset = det_ds
+        db.commit()
+        db.refresh(analysis)
 
     try:
         sam_provider = sam_override

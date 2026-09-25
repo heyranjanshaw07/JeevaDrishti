@@ -59,7 +59,12 @@ def run_hybrid_inference(
     Execute the hybrid cell detection pipeline:
     Microscopy Image -> SAM Proposals -> Candidate Patches -> VLM Classification -> Canonical Mapping -> Overlay.
     """
-    # 1. Validate dataset and shots
+    # 1. Automatic domain resolution if dataset is auto
+    if dataset in ("auto", "auto_detect", None, ""):
+        from app.services.inference.domain_classifier import determine_microscopy_domain
+        dataset, _, _ = determine_microscopy_domain(image)
+
+    # 1a. Validate dataset and shots
     if dataset not in SUPPORTED_DATASETS:
         raise HybridInferenceError(
             f"Unsupported dataset '{dataset}'. Supported: {SUPPORTED_DATASETS}",
