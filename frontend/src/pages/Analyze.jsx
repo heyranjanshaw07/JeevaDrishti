@@ -347,7 +347,7 @@ export default function Analyze() {
           {/* ─────────────────────────────────────────────────────────────
               2. ANALYSIS WORKSPACE (Two-Column Layout)
           ───────────────────────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
             {/* LEFT — Image Input / Viewer (Span 7) */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -363,12 +363,12 @@ export default function Analyze() {
               />
             </motion.div>
 
-            {/* RIGHT — Configuration (Span 5) */}
+            {/* RIGHT — Configuration (Span 5, vertically centered) */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.35, ease: 'easeOut' }}
-              className="lg:col-span-5 flex flex-col justify-center"
+              className="lg:col-span-5 flex flex-col justify-center items-center self-center w-full"
             >
               {/* Configuration Panel */}
               <AnalysisConfig

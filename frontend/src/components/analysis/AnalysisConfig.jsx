@@ -28,7 +28,7 @@ export default function AnalysisConfig({
   }
 
   return (
-    <GlassCard className="p-6 sm:p-8 border-white/[0.08] flex flex-col items-center justify-center gap-5 min-h-[180px]" glow>
+    <GlassCard className="w-full max-w-md p-6 sm:p-8 border-white/[0.08] flex flex-col items-center justify-center gap-5 min-h-[180px] shadow-[0_10px_35px_rgba(0,0,0,0.45)]" glow>
       {/* 0 Shot / 6 Shot Segmented Option Selector */}
       <div className="w-full max-w-xs">
         <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-black/60 border border-white/[0.08]">
