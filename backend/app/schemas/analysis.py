@@ -2,11 +2,33 @@ from datetime import datetime
 from typing import List, Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
-SUPPORTED_DATASETS = ("Micro-OD", "BBBC", "BCCD", "LIVECell", "NIH-3T3")
-SUPPORTED_SHOTS = (0, 1, 3, 6)
+SUPPORTED_DATASETS = (
+    "micro_od",
+    "Micro-OD",
+    "nih_nlm_malaria",
+    "c_nmc_2019",
+    "redtell_anemia",
+    "sipakmed",
+    "BBBC",
+    "BCCD",
+    "LIVECell",
+    "NIH-3T3",
+)
+SUPPORTED_SHOTS = (0, 6)
 
-DatasetType = Literal["Micro-OD", "BBBC", "BCCD", "LIVECell", "NIH-3T3"]
-ShotType = Literal[0, 1, 3, 6]
+DatasetType = Literal[
+    "micro_od",
+    "Micro-OD",
+    "nih_nlm_malaria",
+    "c_nmc_2019",
+    "redtell_anemia",
+    "sipakmed",
+    "BBBC",
+    "BCCD",
+    "LIVECell",
+    "NIH-3T3",
+]
+ShotType = Literal[0, 6]
 
 
 class UploadResponse(BaseModel):
@@ -29,7 +51,7 @@ class AnalysisCreate(BaseModel):
     )
     shots: ShotType = Field(
         0,
-        description="Few-shot exemplar configuration: 0, 1, 3, or 6 shots",
+        description="Few-shot exemplar configuration: 0 or 6 shots",
     )
     vlm_model: str = Field(
         "default",

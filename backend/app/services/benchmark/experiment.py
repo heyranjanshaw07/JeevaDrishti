@@ -81,6 +81,12 @@ class ExperimentResult:
     # Per-class metrics
     per_class_metrics: Dict[str, Dict[str, float]] = field(default_factory=dict)
 
+    # Classification-specific metric (null for OBJECT_DETECTION datasets)
+    accuracy: Optional[float] = None
+
+    # Task type: 'object_detection' | 'cell_classification'
+    task_type: Optional[str] = None
+
     # Counts
     total_images: int = 0
     successful_images: int = 0
@@ -95,6 +101,8 @@ class ExperimentResult:
             "dataset": self.config.dataset,
             "shots": self.config.shots,
             "status": self.status,
+            "task_type": self.task_type,
+            "accuracy": self.accuracy,
             "mf1": self.mf1,
             "precision": self.precision,
             "recall": self.recall,

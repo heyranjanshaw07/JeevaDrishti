@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -20,6 +20,25 @@ class DatasetSummary(BaseModel):
     source_datasets: Optional[List[str]] = Field(None, description="Component sub-datasets if aggregated")
     source_datasets_count: Optional[int] = Field(None, description="Number of source datasets")
     status: str = Field("verified", description="Benchmark verification status")
+
+    # Multi-dataset extension fields (optional, backward-compatible)
+    task_type: str = Field(
+        "object_detection",
+        description="Primary evaluation task: 'object_detection' or 'cell_classification'",
+    )
+    annotation_type: str = Field(
+        "bounding_box",
+        description="Annotation format, e.g. 'Bounding Box', 'Folder Label', 'Polygon'",
+    )
+    domain: Optional[str] = Field(None, description="Medical/biological domain")
+    dataset_status: str = Field(
+        "available",
+        description="Dataset availability status: 'available' or 'unavailable'",
+    )
+    supported_shots: List[int] = Field(
+        default_factory=lambda: [0, 6],
+        description="Valid few-shot experiment counts for this dataset",
+    )
 
 
 
@@ -48,3 +67,35 @@ class DatasetImageListResponse(BaseModel):
     page: int = Field(1, description="Current page number")
     page_size: int = Field(20, description="Items per page")
     total: int = Field(0, description="Total images in split")
+
+
+class DatasetValidationResponse(BaseModel):
+    """Result of validating a dataset adapter on disk."""
+
+    dataset_id: str
+    is_valid: bool
+    checks: Dict[str, bool] = Field(default_factory=dict)
+    errors: List[str] = Field(default_factory=list)
+    image_count_estimate: Optional[int] = None
+
+
+class DatasetRegistryEntry(BaseModel):
+    """Lightweight registry entry for a single dataset (used by UI dataset selector)."""
+
+    id: str
+    display_name: str
+    description: str
+    modality: str
+    domain: str
+    task_type: str
+    annotation_type: str
+    classes: List[str]
+    class_count: int
+    supported_shots: List[int]
+
+
+class DatasetRegistryResponse(BaseModel):
+    """Full registry of all datasets available in this JeevaDrishti installation."""
+
+    datasets: List[DatasetRegistryEntry] = Field(default_factory=list)
+    total: int = 0

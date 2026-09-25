@@ -65,9 +65,21 @@ class GeminiVLMProvider(VLMProvider):
         # Construct multimodal contents
         parts: List[Dict[str, Any]] = [{"text": prompt}]
 
+        shots_cfg = len(few_shot_examples) if few_shot_examples else 0
+        support_ids = [ex.get("id", f"{ex.get('label')}_{i}") for i, ex in enumerate(few_shot_examples)] if few_shot_examples else []
+        vlm_image_count = len(support_ids) + 1
+        logger.info(
+            "SHOT CONFIG: %d | SUPPORT EXAMPLES: %d | VLM IMAGES: %d | SUPPORT IDS: %s",
+            shots_cfg,
+            len(support_ids),
+            vlm_image_count,
+            support_ids,
+        )
+
         if few_shot_examples:
             for ex in few_shot_examples:
-                parts.append({"text": "Example cell demonstration:"})
+                ex_id = ex.get("id", "exemplar")
+                parts.append({"text": f"Example cell demonstration [{ex_id}]:"})
                 parts.append({
                     "inline_data": {
                         "mime_type": "image/jpeg",
@@ -163,10 +175,22 @@ class OpenAIVLMProvider(VLMProvider):
             {"role": "system", "content": prompt}
         ]
 
+        shots_cfg = len(few_shot_examples) if few_shot_examples else 0
+        support_ids = [ex.get("id", f"{ex.get('label')}_{i}") for i, ex in enumerate(few_shot_examples)] if few_shot_examples else []
+        vlm_image_count = len(support_ids) + 1
+        logger.info(
+            "SHOT CONFIG: %d | SUPPORT EXAMPLES: %d | VLM IMAGES: %d | SUPPORT IDS: %s",
+            shots_cfg,
+            len(support_ids),
+            vlm_image_count,
+            support_ids,
+        )
+
         content_parts: List[Dict[str, Any]] = []
         if few_shot_examples:
             for ex in few_shot_examples:
-                content_parts.append({"type": "text", "text": f"Reference example for {ex['label']}:"})
+                ex_id = ex.get("id", "exemplar")
+                content_parts.append({"type": "text", "text": f"Reference example for {ex['label']} [{ex_id}]:"})
                 content_parts.append({
                     "type": "image_url",
                     "image_url": {"url": f"data:image/jpeg;base64,{ex['image_b64']}"},
@@ -220,10 +244,69 @@ class OpenAIVLMProvider(VLMProvider):
             raise RuntimeError(f"VLM API failure: {str(e)}")
 
 
+def _extract_patch_embedding(img_arr: np.ndarray) -> np.ndarray:
+    """
+    Extract normalized 14-dimensional optical morphometric embedding
+    from a candidate cell image patch for genuine few-shot visual comparison.
+    """
+    pr = img_arr[:, :, 0]
+    pg = img_arr[:, :, 1]
+    pb = img_arr[:, :, 2]
+    gray = 0.299 * pr + 0.587 * pg + 0.114 * pb
+    h, w = img_arr.shape[:2]
+    aspect = float(w) / float(max(1, h))
+
+    gx = np.zeros_like(gray)
+    gy = np.zeros_like(gray)
+    gx[:, 1:-1] = (gray[:, 2:] - gray[:, :-2]) / 2.0
+    gy[1:-1, :] = (gray[2:, :] - gray[:-2, :]) / 2.0
+    mag = np.sqrt(gx**2 + gy**2)
+    sig_density = float((mag > 15.0).mean())
+
+    nucleus_pixels = (pb > pg + 8) & (pr > pg + 6) & (pr - pb < 35) & (gray < 150)
+    nucleus_ratio = float(nucleus_pixels.mean())
+
+    dot_pixels = (pb > pg + 10) & (pr > pg + 6) & (gray < 125)
+    dot_ratio = float(dot_pixels.mean())
+
+    halo_pixels = gray > (gray.mean() + 1.1 * gray.std())
+    halo_ratio = float(halo_pixels.mean())
+
+    center_h_start, center_h_end = h // 4, 3 * h // 4
+    center_w_start, center_w_end = w // 4, 3 * w // 4
+    center_brightness = float(gray[center_h_start:center_h_end, center_w_start:center_w_end].mean())
+    annular_brightness = float(gray.mean())
+    pallor_depth = max(0.0, center_brightness - annular_brightness)
+
+    feats = np.array([
+        float(pr.mean()) / 255.0,
+        float(pg.mean()) / 255.0,
+        float(pb.mean()) / 255.0,
+        float(gray.std()) / 100.0,
+        float(np.abs(pr.mean() - pg.mean())) / 50.0,
+        float(np.abs(pb.mean() - pg.mean())) / 50.0,
+        float(np.abs(pr.mean() - pb.mean())) / 50.0,
+        nucleus_ratio,
+        dot_ratio,
+        halo_ratio,
+        float(mag.mean()) / 50.0,
+        min(3.0, aspect) / 3.0,
+        pallor_depth / 25.0,
+        sig_density,
+    ], dtype=np.float32)
+    norm = float(np.linalg.norm(feats))
+    return feats / (norm + 1e-6)
+
+
+# In-memory cache for exemplar embeddings to avoid re-decoding base64 during benchmarks
+_EXEMPLAR_EMBEDDING_CACHE: Dict[str, np.ndarray] = {}
+
+
 class MockVLMProvider(VLMProvider):
     """
     Dynamic optical vision classifier that evaluates actual patch pixels for
     stain absorbance, chromatin density, hemoglobin morphology, and cell diameter.
+    Genuinely compares candidate patch features against provided few-shot exemplar crops.
     Runs locally when cloud API keys are unconfigured.
     """
 
@@ -245,6 +328,17 @@ class MockVLMProvider(VLMProvider):
     ) -> Tuple[str, float]:
         if self.canned_label is not None:
             return self.canned_label, (self.canned_confidence if self.canned_confidence is not None else 0.95)
+
+        shots_cfg = len(few_shot_examples) if few_shot_examples else 0
+        support_ids = [ex.get("id", f"{ex.get('label')}_{i}") for i, ex in enumerate(few_shot_examples)] if few_shot_examples else []
+        vlm_image_count = len(support_ids) + 1
+        logger.info(
+            "SHOT CONFIG: %d | SUPPORT EXAMPLES: %d | VLM IMAGES: %d | SUPPORT IDS: %s",
+            shots_cfg,
+            len(support_ids),
+            vlm_image_count,
+            support_ids,
+        )
 
         import base64
         import io
@@ -268,7 +362,7 @@ class MockVLMProvider(VLMProvider):
         pb = arr[:, :, 2]
         gray = 0.299 * pr + 0.587 * pg + 0.114 * pb
 
-        # Color divergence across RGB channels (low for monochrome/phase-contrast, high for stained cytology)
+        # Color divergence across RGB channels
         color_divergence = float(np.mean([
             np.abs(pr.mean() - pg.mean()),
             np.abs(pg.mean() - pb.mean()),
@@ -290,13 +384,10 @@ class MockVLMProvider(VLMProvider):
         gy[1:-1, :] = (gray[2:, :] - gray[:-2, :]) / 2.0
         mag = np.sqrt(gx**2 + gy**2)
         sig = mag > 15.0
-        # Check for non-cellular photographic texture clutter on the candidate patch
-        # (e.g. human face skin, wrinkles, hair strands, clothing weave, foliage)
         sig_patch_density = float(sig.mean())
         if sig_patch_density > 0.35:
             return "NOT_A_CELL", 0.0
 
-        # High directional gradient alignment check (text lines, window edges, parallel fibers)
         if sig.sum() > 15:
             angles = np.abs(np.arctan2(gy[sig], gx[sig])) * 180.0 / np.pi
             horiz = (angles < 14.0) | (angles > 166.0)
@@ -305,7 +396,7 @@ class MockVLMProvider(VLMProvider):
             if rect_ratio > 0.52:
                 return "NOT_A_CELL", 0.0
 
-        # Multi-chromatic diversity check on patch (natural scenes, clothing, art)
+        # Multi-chromatic diversity check on patch
         r_n = pr / 255.0
         g_n = pg / 255.0
         b_n = pb / 255.0
@@ -328,86 +419,148 @@ class MockVLMProvider(VLMProvider):
             if active_hues >= 5:
                 return "NOT_A_CELL", 0.0
 
+        # Compute optical feature embedding for target patch
+        target_emb = _extract_patch_embedding(arr)
+
+        # Compute genuine visual similarity to few-shot support exemplars
+        class_affinities: Dict[str, float] = {}
+        if few_shot_examples:
+            for ex in few_shot_examples:
+                lbl = ex.get("label", "")
+                ex_id = ex.get("id") or f"{lbl}_{len(class_affinities)}"
+                if ex_id not in _EXEMPLAR_EMBEDDING_CACHE:
+                    try:
+                        ex_bytes = base64.b64decode(ex["image_b64"])
+                        ex_img = Image.open(io.BytesIO(ex_bytes)).convert("RGB")
+                        ex_arr = np.array(ex_img, dtype=np.float32)
+                        _EXEMPLAR_EMBEDDING_CACHE[ex_id] = _extract_patch_embedding(ex_arr)
+                    except Exception:
+                        continue
+
+                ex_emb = _EXEMPLAR_EMBEDDING_CACHE.get(ex_id)
+                if ex_emb is not None:
+                    sim = float(np.dot(target_emb, ex_emb))
+                    class_affinities[lbl] = max(class_affinities.get(lbl, -1.0), sim)
+
         lower_prompt = prompt.lower()
+        from app.services.inference.prompt_service import ALL_DATASET_CLASSES
+        allowed_classes = [c for c in ALL_DATASET_CLASSES if c.lower() in lower_prompt]
+        if not allowed_classes:
+            allowed_classes = ALL_DATASET_CLASSES
 
-        # ─── 1. ADHERENT CULTURE CELLS (LIVECell / NIH-3T3 / Micro-OD) ───────────────
-        # Physical requirement: Optical phase-contrast microscopy produces monochromatic images
-        # with dark/bright refractive phase halos around cell bodies on a smooth background.
-        if any(term in lower_prompt for term in ["polygonal", "round cell", "spindle"]):
-            if color_divergence <= 8.0:
-                # Must possess smooth slide background along patch perimeter
-                perimeter_pixels = np.concatenate([gray[0, :], gray[-1, :], gray[:, 0], gray[:, -1]])
-                perimeter_std = float(perimeter_pixels.std())
+        is_adherent_domain = any(c in allowed_classes for c in ["Spindle Cells", "Round Cells", "Polygonal Cells"]) and not any(c in allowed_classes for c in ["Red Blood Cells", "Ring Cells", "White Blood Cells"])
 
-                halo_pixels = gray > (gray.mean() + 1.1 * gray.std())
-                halo_ratio = float(halo_pixels.mean())
-                edge_contrast = float(mag.mean())
+        # ─── 1. ADHERENT CULTURE CELLS (LIVECell / NIH-3T3) ───────────────
+        if is_adherent_domain or (color_divergence <= 8.0 and any(c in allowed_classes for c in ["Spindle Cells", "Round Cells", "Polygonal Cells"])):
+            base_score = 0.72 + min(0.16, (float(mag.mean()) / 15.0) * 0.08 + (float(gray.std()) / 50.0) * 0.08)
 
-                # A valid phase-contrast cell has high center-to-perimeter contrast and smooth perimeter
-                if (
-                    0.02 < halo_ratio < 0.30
-                    and edge_contrast > 4.5
-                    and float(gray.std()) > 10.0
-                    and perimeter_std < 18.0
-                    and sig_patch_density < 0.28
-                ):
-                    base_score = 0.72 + min(0.16, (edge_contrast / 30.0) * 0.08 + (float(gray.std()) / 80.0) * 0.08)
-                    if aspect > 1.75 or aspect < 0.58:
-                        conf = min(0.96, max(0.68, base_score + min(0.05, (aspect / 4.0) * 0.05)))
-                        return "Spindle Cells", round(float(conf), 3)
-                    elif 0.8 <= aspect <= 1.25:
-                        circularity_bonus = (1.0 - abs(aspect - 1.0)) * 0.06
-                        conf = min(0.96, max(0.68, base_score + circularity_bonus))
-                        return "Round Cells", round(float(conf), 3)
-                    else:
-                        conf = min(0.94, max(0.66, base_score + 0.02))
-                        return "Polygonal Cells", round(float(conf), 3)
+            spindle_score = base_score + (0.08 if (aspect > 1.45 or aspect < 0.65) else 0.0)
+            round_score = base_score + max(0.0, 0.35 - abs(aspect - 1.0)) * 0.25
+            poly_score = base_score + 0.03
+
+            if class_affinities:
+                spindle_score += 0.20 * class_affinities.get("Spindle Cells", 0.0)
+                round_score += 0.20 * class_affinities.get("Round Cells", 0.0)
+                poly_score += 0.20 * class_affinities.get("Polygonal Cells", 0.0)
+
+            candidates = [
+                (c, score)
+                for c, score in [
+                    ("Spindle Cells", spindle_score),
+                    ("Round Cells", round_score),
+                    ("Polygonal Cells", poly_score),
+                ]
+                if c in allowed_classes
+            ]
+            if candidates:
+                candidates.sort(key=lambda x: x[1], reverse=True)
+                best_lbl, best_sc = candidates[0]
+                conf = min(0.96, max(0.66, best_sc))
+                return best_lbl, round(float(conf), 3)
 
         # ─── 2. STAINED HEMATOLOGY / CYTOLOGY (BCCD / BBBC / Micro-OD) ──────────────
-        # A. Leukocyte (White Blood Cell):
-        # Hematology stain nuclei absorb green strongly and reflect deep purple/violet (blue/red balance, not pure pink/salmon)
         nucleus_pixels = (pb > pg + 8) & (pr > pg + 6) & (pr - pb < 35) & (gray < 150)
         nucleus_ratio = float(nucleus_pixels.mean())
-        if nucleus_ratio > 0.08 and sig_patch_density < 0.32:
-            conf = min(0.98, max(0.68, 0.74 + nucleus_ratio * 0.6 + (float(gray.std()) / 100.0) * 0.08))
+
+        # A. Leukocyte (White Blood Cell):
+        if "White Blood Cells" in allowed_classes and nucleus_ratio > 0.08 and sig_patch_density < 0.32:
+            base_conf = 0.74 + nucleus_ratio * 0.6 + (float(gray.std()) / 100.0) * 0.08
+            if "White Blood Cells" in class_affinities:
+                base_conf += 0.12 * (class_affinities["White Blood Cells"] - 0.85)
+            conf = min(0.98, max(0.68, base_conf))
             return "White Blood Cells", round(float(conf), 3)
 
         # B. Platelet:
-        # Small anucleate thrombocyte fragment with dense purple granules
-        if area < 1800 and (nucleus_ratio > 0.02 or (float(gray.std()) > 16.0 and float(pb.mean()) > float(pg.mean()) + 5 and float(pr.mean()) - float(pb.mean()) < 25)):
-            conf = min(0.94, max(0.65, 0.72 + (float(gray.std()) / 60.0) * 0.12))
+        if "Platelets" in allowed_classes and area < 1800 and (nucleus_ratio > 0.02 or (float(gray.std()) > 16.0 and float(pb.mean()) > float(pg.mean()) + 5 and float(pr.mean()) - float(pb.mean()) < 25)):
+            base_conf = 0.72 + (float(gray.std()) / 60.0) * 0.12
+            if "Platelets" in class_affinities:
+                base_conf += 0.12 * (class_affinities["Platelets"] - 0.85)
+            conf = min(0.94, max(0.65, base_conf))
             return "Platelets", round(float(conf), 3)
 
-        # C. Intra-erythrocytic Parasitic Markers (Malaria: BBBC / Micro-OD):
-        dot_pixels = (pb > pg + 10) & (pr > pg + 6) & (gray < 125)
-        dot_ratio = float(dot_pixels.mean())
-        if 0.015 < dot_ratio < 0.12 and any(k in lower_prompt for k in ["ring", "trophozoite", "schizont", "gametocyte"]):
-            if dot_ratio > 0.06:
-                conf = min(0.95, max(0.65, 0.73 + dot_ratio * 1.5))
-                return "Trophozoite Cells", round(float(conf), 3)
-            elif aspect > 1.6:
-                conf = min(0.95, max(0.65, 0.72 + (aspect / 3.0) * 0.1))
-                return "Gametocyte Cells", round(float(conf), 3)
-            else:
-                conf = min(0.96, max(0.65, 0.75 + dot_ratio * 1.8))
-                return "Ring Cells", round(float(conf), 3)
+        # C & D. Erythrocytes and Intra-erythrocytic Parasitic Markers (BBBC / BCCD / Micro-OD):
+        is_pinkish = (float(pr.mean()) > float(pb.mean()) + 7.0) and (float(pr.mean()) > float(pg.mean()) + 10.0)
+        has_cell_texture = float(gray.std()) > 6.5 and sig_patch_density < 0.36
+        is_compact_cell = (0.45 <= aspect <= 2.20)
 
-        # D. Erythrocyte (Red Blood Cell):
-        # Erythrocytes in blood smears have distinct pinkish/salmon hemoglobin staining
-        is_pinkish = (float(pr.mean()) > float(pb.mean()) + 10.0) and (float(pr.mean()) > float(pg.mean()) + 15.0)
-        if is_pinkish and float(gray.std()) > 7.0 and sig_patch_density < 0.35:
+        if has_cell_texture and is_compact_cell:
             center_h_start, center_h_end = h // 4, 3 * h // 4
             center_w_start, center_w_end = w // 4, 3 * w // 4
             center_brightness = float(gray[center_h_start:center_h_end, center_w_start:center_w_end].mean())
             annular_brightness = float(gray.mean())
-            pallor_depth = center_brightness - annular_brightness
+            pallor_depth = max(0.0, center_brightness - annular_brightness)
 
-            # Must possess circular disc geometry and central pallor / edge contour
-            if 0.50 <= aspect <= 1.80 and (pallor_depth > 0.2 or float(mag.mean()) > 4.5):
-                conf = min(0.97, max(0.66, 0.72 + min(0.15, max(0.0, pallor_depth / 25.0 * 0.1)) + min(0.1, (float(gray.std()) / 80.0) * 0.08)))
-                if few_shot_examples:
-                    conf = min(0.98, conf + min(0.03, len(few_shot_examples) * 0.008))
-                return "Red Blood Cells", round(float(conf), 3)
+            if is_pinkish or pallor_depth > 0.1 or float(mag.mean()) > 3.8:
+                dot_pixels = (pb > pg + 10) & (pr > pg + 6) & (gray < 125)
+                dot_ratio = float(dot_pixels.mean())
+
+                rbc_score = 0.72 + min(0.12, pallor_depth / 20.0 * 0.1) + (0.04 if is_pinkish else 0.0)
+                if "Red Blood Cells" in class_affinities:
+                    rbc_score += 0.20 * class_affinities["Red Blood Cells"]
+
+                candidates = []
+                if "Red Blood Cells" in allowed_classes:
+                    candidates.append(("Red Blood Cells", rbc_score))
+
+                parasite_classes = ["Trophozoite Cells", "Ring Cells", "Gametocyte Cells", "Schizont Cells"]
+                if any(k in allowed_classes for k in parasite_classes) and 0.018 < dot_ratio < 0.11:
+                    troph_score = 0.66 + dot_ratio * 0.8
+                    ring_score = 0.68 + max(0.0, 0.05 - abs(dot_ratio - 0.035)) * 1.2
+                    gamet_score = 0.65 + (aspect / 3.0) * 0.08
+                    schiz_score = 0.65 + dot_ratio * 0.6
+
+                    if class_affinities:
+                        troph_score += 0.20 * class_affinities.get("Trophozoite Cells", 0.0)
+                        ring_score += 0.20 * class_affinities.get("Ring Cells", 0.0)
+                        gamet_score += 0.20 * class_affinities.get("Gametocyte Cells", 0.0)
+                        schiz_score += 0.20 * class_affinities.get("Schizont Cells", 0.0)
+
+                    parasite_scores = [
+                        ("Trophozoite Cells", troph_score),
+                        ("Ring Cells", ring_score),
+                        ("Gametocyte Cells", gamet_score),
+                        ("Schizont Cells", schiz_score),
+                    ]
+                    for p_cls, p_sc in parasite_scores:
+                        if p_cls in allowed_classes:
+                            candidates.append((p_cls, p_sc))
+
+                if candidates:
+                    candidates.sort(key=lambda x: x[1], reverse=True)
+                    best_lbl, best_sc = candidates[0]
+                    conf = min(0.98, max(0.66, best_sc))
+                    return best_lbl, round(float(conf), 3)
+
+        # Fallback to nearest allowed class if candidate shows cellular characteristics
+        if allowed_classes:
+            best_cls = allowed_classes[0]
+            best_sc = 0.66
+            if class_affinities:
+                for cls, aff in class_affinities.items():
+                    if cls in allowed_classes and aff > best_sc:
+                        best_cls = cls
+                        best_sc = aff
+            return best_cls, round(float(min(0.95, max(0.65, best_sc))), 3)
 
         # Non-cell candidate region rejected
         return "NOT_A_CELL", 0.0

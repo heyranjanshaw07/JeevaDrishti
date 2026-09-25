@@ -13,6 +13,7 @@ import GlobalFooter from '@/components/ui/GlobalFooter'
 import GlassCard from '@/components/ui/GlassCard'
 import Button from '@/components/ui/Button'
 import StatusBadge from '@/components/ui/StatusBadge'
+import MicroscopyTransition from '@/components/transitions/MicroscopyTransition'
 import { useAppStore } from '@/store/appStore'
 import { MOCK_DATASETS, MOCK_BENCHMARK_DATA } from '@/services/api'
 import { fadeInUpVariants, staggerContainerVariants } from '@/components/transitions/motionVariants'
@@ -93,12 +94,12 @@ const PIPELINE_STAGES = [
   },
 ]
 
-// ─── Few-Shot Scaling Data ───────────────────────────────────────────────────
+// ─── Few-Shot Scaling Data (Visual comparison tab) ───────────────────────────
 const SHOT_SCALING = [
-  { shot: '0-shot', mF1: '41.2%', mAP: '38.9%', latency: '1,240ms', desc: 'Direct foundation semantic reasoning with zero visual exemplars' },
-  { shot: '1-shot', mF1: '58.1%', mAP: '55.4%', latency: '980ms', desc: 'Rapid adaptation from a single annotated exemplar image' },
-  { shot: '3-shot', mF1: '71.4%', mAP: '68.2%', latency: '1,100ms', desc: 'Optimal trade-off between exemplar setup and boundary sharpness' },
-  { shot: '6-shot', mF1: '79.8%', mAP: '76.4%', latency: '1,380ms', desc: 'Comprehensive clinical calibration rivaling dedicated supervised models' },
+  { shot: '0-shot', mF1: 64.2, recall: 61.8, precision: 67.1, desc: 'Zero visual exemplars — purely semantic textual prompt.' },
+  { shot: '1-shot', mF1: 71.4, recall: 69.2, precision: 73.8, desc: 'Single reference cell exemplar provided in context.' },
+  { shot: '3-shot', mF1: 76.9, recall: 75.1, precision: 78.6, desc: 'Three reference exemplars covering morphology diversity.' },
+  { shot: '6-shot', mF1: 79.8, recall: 78.4, precision: 81.2, desc: 'Optimal prompt length — balances context and accuracy.' },
 ]
 
 export default function Landing() {
@@ -107,6 +108,7 @@ export default function Landing() {
   const { isAuthenticated } = useAppStore()
   const [selectedShot, setSelectedShot] = useState('6-shot')
   const [activePromptIndex, setActivePromptIndex] = useState(0)
+  const [isTransitioning, setIsTransitioning] = useState(false)
 
   const samplePrompts = [
     'Identify all polymorphonuclear neutrophils with multi-lobed chromatin nuclei in BCCD blood smear.',
@@ -119,7 +121,7 @@ export default function Landing() {
     if (isAuthenticated) {
       navigate('/analyze')
     } else {
-      navigate('/login')
+      setIsTransitioning(true)
     }
   }
 
@@ -353,11 +355,9 @@ export default function Landing() {
                 </li>
               ))}
             </ul>
-            <Link to={isAuthenticated ? "/analyze" : "/login"}>
-              <Button variant="primary" iconRight={ArrowRight}>
-                Try Zero-Shot Prompting
-              </Button>
-            </Link>
+            <Button variant="primary" iconRight={ArrowRight} onClick={handleStartAnalysis}>
+              Try Zero-Shot Prompting
+            </Button>
           </div>
 
           {/* Right Interactive Prompt Simulation Card */}
@@ -585,8 +585,8 @@ export default function Landing() {
                 </div>
 
                 {/* Progress bar visualizer */}
-                <div className="grid grid-cols-4 gap-2">
-                  {['0-shot', '1-shot', '3-shot', '6-shot'].map((s) => {
+                <div className="grid grid-cols-2 gap-3">
+                  {['0-shot', '6-shot'].map((s) => {
                     const score = shotValues[s]
                     const pct = Math.round(score * 100)
                     return (
@@ -758,6 +758,15 @@ export default function Landing() {
 
       {/* ─── Standard Global Footer ─── */}
       <GlobalFooter />
+
+      {/* ─── Signature Laboratory Optical Transition to Iris Screen ──────── */}
+      <MicroscopyTransition
+        active={isTransitioning}
+        onComplete={() => {
+          setIsTransitioning(false)
+          navigate('/iris')
+        }}
+      />
     </div>
   )
 }

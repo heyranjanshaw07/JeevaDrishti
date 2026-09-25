@@ -7,16 +7,17 @@ import {
   Clock,
   Cpu,
   Info,
+  CheckCircle2,
 } from 'lucide-react'
 import GlassCard from '@/components/ui/GlassCard'
 
-const METRICS_DEF = [
+const DETECTION_METRICS = [
   {
     key: 'mF1',
     label: 'mF1',
     name: 'Macro F1 Score',
     icon: Activity,
-    explanation: 'Macro F1 across evaluated classes.',
+    explanation: 'Macro F1 across evaluated cell classes.',
     unit: '',
   },
   {
@@ -48,8 +49,59 @@ const METRICS_DEF = [
     label: 'Latency',
     name: 'Inference Latency',
     icon: Clock,
-    explanation: 'Inference time per image.',
+    explanation: 'Inference time per image (ms).',
+    unit: 'ms',
+  },
+  {
+    key: 'vlmCalls',
+    label: 'VLM Calls',
+    name: 'Model Invocations',
+    icon: Cpu,
+    explanation: 'Number of vision-language model calls.',
     unit: '',
+  },
+]
+
+const CLASSIFICATION_METRICS = [
+  {
+    key: 'accuracy',
+    label: 'Accuracy',
+    name: 'Overall Accuracy',
+    icon: CheckCircle2,
+    explanation: 'Proportion of correctly classified cell images.',
+    unit: '',
+  },
+  {
+    key: 'precision',
+    label: 'Precision',
+    name: 'Macro Precision',
+    icon: Target,
+    explanation: 'Average positive predictive value across classes.',
+    unit: '',
+  },
+  {
+    key: 'recall',
+    label: 'Recall',
+    name: 'Macro Recall',
+    icon: BarChart2,
+    explanation: 'Average true positive rate across classes.',
+    unit: '',
+  },
+  {
+    key: 'mF1',
+    label: 'F1 Score',
+    name: 'Macro F1 Score',
+    icon: Activity,
+    explanation: 'Harmonic mean of precision and recall across classes.',
+    unit: '',
+  },
+  {
+    key: 'latency',
+    label: 'Latency',
+    name: 'Inference Latency',
+    icon: Clock,
+    explanation: 'Inference time per image (ms).',
+    unit: 'ms',
   },
   {
     key: 'vlmCalls',
@@ -62,9 +114,19 @@ const METRICS_DEF = [
 ]
 
 /**
- * MetricsPanel — 6 Evaluation metric cards showing initial '—' states
+ * MetricsPanel — Task-aware Evaluation metric cards
  */
-export default function MetricsPanel({ metrics = {} }) {
+export default function MetricsPanel({ metrics = {}, taskType = 'object_detection', status = 'not_evaluated' }) {
+  const isClassification = taskType === 'cell_classification'
+  const defs = isClassification ? CLASSIFICATION_METRICS : DETECTION_METRICS
+
+  const statusBadge =
+    status === 'completed' || status === 'evaluated'
+      ? { text: 'EVALUATION COMPLETE', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25' }
+      : status === 'not_available'
+      ? { text: 'NOT AVAILABLE', color: 'text-amber-400 bg-amber-500/10 border-amber-500/25' }
+      : { text: 'AWAITING EVALUATION', color: 'text-text-muted bg-white/[0.03] border-white/[0.08]' }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -72,24 +134,42 @@ export default function MetricsPanel({ metrics = {} }) {
           <div className="flex items-center gap-2">
             <Activity size={18} className="text-crimson" />
             <h3 className="text-xl font-heading font-bold text-white tracking-tight">
-              Evaluation Metrics
+              Evaluation Metrics {isClassification ? '(Classification)' : '(Detection)'}
             </h3>
           </div>
           <p className="text-sm text-text-secondary mt-0.5">
-            Standard quantitative microscopy evaluation metrics for zero-shot and few-shot detection.
+            {isClassification
+              ? 'Classification metrics (Accuracy, Precision, Recall, F1). IoU is not applicable to whole-cell classification.'
+              : 'Detection metrics (mF1, Precision, Recall, IoU) computed with SAM proposals and VLM verification.'}
           </p>
         </div>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-text-muted self-start sm:self-auto">
+        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-mono self-start sm:self-auto ${statusBadge.color}`}>
           <Info size={13} />
-          <span>AWAITING EVALUATION</span>
+          <span>{statusBadge.text}</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {METRICS_DEF.map((m, idx) => {
+        {defs.map((m, idx) => {
           const Icon = m.icon
-          const rawValue = metrics[m.key]
-          const displayValue = rawValue !== null && rawValue !== undefined ? rawValue : '—'
+          const rawValue = metrics[m.key] !== undefined ? metrics[m.key] : (m.key === 'mF1' && metrics.f1 !== undefined ? metrics.f1 : null)
+
+          let displayValue = '—'
+          if (status === 'not_available' && rawValue === null) {
+            displayValue = 'Not available'
+          } else if (rawValue !== null && rawValue !== undefined) {
+            if (typeof rawValue === 'number') {
+              if (m.unit === 'ms') {
+                displayValue = `${Math.round(rawValue)} ms`
+              } else if (rawValue <= 1.0 && (m.key === 'mF1' || m.key === 'precision' || m.key === 'recall' || m.key === 'iou' || m.key === 'accuracy')) {
+                displayValue = (rawValue * 100).toFixed(1) + '%'
+              } else {
+                displayValue = String(rawValue)
+              }
+            } else {
+              displayValue = String(rawValue)
+            }
+          }
 
           return (
             <motion.div
@@ -122,7 +202,7 @@ export default function MetricsPanel({ metrics = {} }) {
 
                   {/* Metric Value */}
                   <div className="py-2">
-                    <div className="text-4xl sm:text-5xl font-mono font-extrabold text-white tracking-tight">
+                    <div className={`font-mono font-extrabold text-white tracking-tight ${displayValue === 'Not available' ? 'text-2xl text-amber-400' : 'text-3xl sm:text-4xl'}`}>
                       {displayValue}
                     </div>
                   </div>

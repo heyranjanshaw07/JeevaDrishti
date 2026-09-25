@@ -43,3 +43,22 @@ class LogoutResponse(BaseModel):
     """Clean logout confirmation."""
 
     message: str = "Successfully logged out"
+
+
+class DemoLoginCredentials(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class DemoSignupCredentials(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    confirmPassword: str
+
+
+class DemoAuthResponse(BaseModel):
+    """Demo credentials for research exploration."""
+
+    login: DemoLoginCredentials
+    signup: DemoSignupCredentials

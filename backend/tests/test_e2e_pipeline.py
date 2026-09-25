@@ -145,10 +145,10 @@ def test_e2e_full_lifecycle_with_mocked_ai(monkeypatch):
     assert "logged out" in logout_res.json()["message"].lower()
 
 
-# ─── 2. Few-Shot Configurations (0, 1, 3, 6 shots) ───────────────────────────
-@pytest.mark.parametrize("shots", [0, 1, 3, 6])
+# ─── 2. Few-Shot Configurations (0, 6 shots) ─────────────────────────────────
+@pytest.mark.parametrize("shots", [0, 6])
 def test_e2e_few_shot_variants(shots, monkeypatch):
-    """Verify that 0-shot, 1-shot, 3-shot, and 6-shot configurations all execute properly."""
+    """Verify that 0-shot and 6-shot configurations execute properly."""
     # User setup
     email = f"fewshot_{shots}@microscopy.org"
     client.post(
@@ -189,6 +189,34 @@ def test_e2e_few_shot_variants(shots, monkeypatch):
     res = client.get(f"/api/v1/analysis/{analysis_id}/results", headers=headers)
     assert res.status_code == 200
     assert res.json()["shots"] == shots
+
+
+@pytest.mark.parametrize("bad_shots", [1, 3])
+def test_e2e_rejected_shot_variants(bad_shots):
+    """Verify that 1-shot and 3-shot requests are rejected by analysis creation API."""
+    email = f"badshot_{bad_shots}@microscopy.org"
+    client.post(
+        "/api/v1/auth/register",
+        json={"name": f"Tester Bad {bad_shots}", "email": email, "password": "Password123!"},
+    )
+    login_res = client.post("/api/v1/auth/login", json={"email": email, "password": "Password123!"})
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    img_bytes = create_synthetic_microscopy_png()
+    upload_res = client.post(
+        "/api/v1/analysis/upload",
+        headers=headers,
+        files={"file": (f"test_bad_{bad_shots}.png", img_bytes, "image/png")},
+    )
+    file_id = upload_res.json()["file_id"]
+
+    create_res = client.post(
+        "/api/v1/analysis",
+        headers=headers,
+        json={"file_id": file_id, "dataset": "BCCD", "shots": bad_shots},
+    )
+    assert create_res.status_code == 422
 
 
 # ─── 3. Multi-Tenant Ownership Isolation ─────────────────────────────────────

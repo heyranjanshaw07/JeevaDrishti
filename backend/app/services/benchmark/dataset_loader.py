@@ -149,14 +149,16 @@ def load_support_examples(dataset: str, shots: int) -> List[Dict[str, Any]]:
     """
     Load deterministic few-shot support examples for a given dataset and shot count.
 
+    Research Few-Shot Specification:
+    - 0-shot: 0 reference examples ([])
+    - 1-shot: exactly 1 reference example
+    - 3-shot: exactly 3 reference examples
+    - 6-shot: exactly 6 reference examples
+
     Selection strategy:
     - Sort all example annotation records by image_path (deterministic).
-    - For each class: take the first `shots` bounding boxes from sorted records.
-    - Returns list of {"label": str, "image_b64": str} dicts.
-
-    For shots=0: returns empty list (zero-shot).
-    Reuses prompt_service.load_few_shot_examples for the actual image cropping/encoding,
-    which is already verified and tested.
+    - Round-robin selection across canonical dataset classes.
+    - Returns list of {"id": str, "label": str, "image_b64": str, "dataset": str, "bbox": [x1,y1,x2,y2]} dicts.
     """
     if shots == 0:
         return []

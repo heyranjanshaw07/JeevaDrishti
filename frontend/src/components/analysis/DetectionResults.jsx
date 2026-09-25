@@ -431,7 +431,7 @@ export default function DetectionResults({
             <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono">
               <span className="text-text-muted">Configurations</span>
               <span className="text-white font-bold tracking-wider">
-                0 / 1 / 3 / 6 shots
+                0 / 6 shots
               </span>
             </div>
           </GlassCard>

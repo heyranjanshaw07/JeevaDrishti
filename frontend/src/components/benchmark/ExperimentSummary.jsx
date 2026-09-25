@@ -57,10 +57,14 @@ export default function ExperimentSummary({ selectedDataset = 'Micro-OD', select
           {/* MODE */}
           <div className="p-3 rounded-xl bg-black/40 border border-white/[0.05]">
             <span className="block text-xs font-mono text-text-muted uppercase tracking-wider mb-1">
-              Detection Mode
+              {['c_nmc_2019', 'redtell_anemia', 'sipakmed'].includes((selectedDataset || '').toLowerCase())
+                ? 'Task Mode'
+                : 'Detection Mode'}
             </span>
             <span className="text-sm font-mono font-bold text-white leading-tight">
-              Hybrid Detection
+              {['c_nmc_2019', 'redtell_anemia', 'sipakmed'].includes((selectedDataset || '').toLowerCase())
+                ? 'Cell Classification'
+                : 'Hybrid Detection'}
             </span>
           </div>
 

@@ -29,6 +29,8 @@ def init_db(target_engine=None) -> None:
                 ("iou_threshold", "FLOAT"),
                 ("vlm_model", "VARCHAR(100)"),
                 ("error_message", "TEXT"),
+                ("accuracy", "FLOAT"),
+                ("task_type", "VARCHAR(30)"),
             ]
             with eng.begin() as conn:
                 for col_name, col_type in new_columns:

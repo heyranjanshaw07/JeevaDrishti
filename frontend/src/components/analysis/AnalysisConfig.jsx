@@ -4,8 +4,18 @@ import { Sliders, Database, Cpu, Layers, Play, Check, ChevronDown, Sparkles } fr
 import GlassCard from '@/components/ui/GlassCard'
 import Button from '@/components/ui/Button'
 
-const DATASET_OPTIONS = ['Micro-OD', 'BBBC', 'BCCD', 'LIVECell', 'NIH-3T3']
-const SHOT_OPTIONS = ['0 Shot', '1 Shot', '3 Shot', '6 Shot']
+const DATASET_OPTIONS = [
+  { id: 'micro_od', label: 'Micro-OD Benchmark', taskType: 'Detection', domain: 'Multi-Modal Optical' },
+  { id: 'nih_nlm_malaria', label: 'NIH-NLM Malaria', taskType: 'Detection', domain: 'Thin Blood Smears' },
+  { id: 'c_nmc_2019', label: 'C-NMC 2019 Leukemia', taskType: 'Classification', domain: 'Blood Smear Blasts' },
+  { id: 'redtell_anemia', label: 'RedTell Anemia', taskType: 'Classification', domain: 'RBC Morphology' },
+  { id: 'sipakmed', label: 'SIPaKMeD Cervical', taskType: 'Classification', domain: 'Pap Smear Cytology' },
+  { id: 'BBBC', label: 'BBBC (Micro-OD)', taskType: 'Detection', domain: 'Fluorescence' },
+  { id: 'BCCD', label: 'BCCD (Micro-OD)', taskType: 'Detection', domain: 'Blood Smear' },
+  { id: 'LIVECell', label: 'LIVECell (Micro-OD)', taskType: 'Detection', domain: 'Phase-Contrast' },
+  { id: 'NIH-3T3', label: 'NIH-3T3 (Micro-OD)', taskType: 'Detection', domain: 'Brightfield' },
+]
+const SHOT_OPTIONS = ['0 Shot', '6 Shot']
 const MODEL_OPTIONS = [
   { id: 'optical', label: 'Optical Vision Engine (Local Dynamic)', badge: 'LOCAL' },
   { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (Google Cloud VLM)', badge: 'CLOUD' },
@@ -17,7 +27,7 @@ const MODEL_OPTIONS = [
  * AnalysisConfig — AI Microscopy Research Configuration Panel
  */
 export default function AnalysisConfig({
-  dataset = 'Micro-OD',
+  dataset = 'micro_od',
   onDatasetChange,
   shotMode = '6 Shot',
   onShotModeChange,
@@ -29,6 +39,10 @@ export default function AnalysisConfig({
 }) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false)
+
+  const activeDatasetOpt = DATASET_OPTIONS.find(
+    (d) => d.id.toLowerCase() === (dataset || '').toLowerCase()
+  ) || DATASET_OPTIONS[0]
 
   const handleRunClick = () => {
     if (!isReady || isRunning) return
@@ -58,9 +72,15 @@ export default function AnalysisConfig({
           <label className="text-sm font-mono font-semibold text-white/90 flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <Database size={15} className="text-crimson" />
-              Dataset Benchmark Suite
+              Target Dataset & Task
             </span>
-            <span className="text-xs font-mono text-text-muted">Target Domain</span>
+            <span className={`text-[10px] font-mono px-2 py-0.5 rounded border font-bold uppercase ${
+              activeDatasetOpt.taskType === 'Classification'
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                : 'bg-crimson/10 text-crimson border-crimson/30'
+            }`}>
+              {activeDatasetOpt.taskType}
+            </span>
           </label>
 
           <div className="relative">
@@ -70,8 +90,10 @@ export default function AnalysisConfig({
               className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-black/60 border border-white/[0.1] hover:border-crimson/40 focus:outline-none focus:ring-1 focus:ring-crimson/50 text-sm font-mono text-white transition-all cursor-pointer shadow-inner"
             >
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-crimson" />
-                <span className="font-semibold text-sm">{dataset}</span>
+                <span className={`w-2 h-2 rounded-full ${
+                  activeDatasetOpt.taskType === 'Classification' ? 'bg-emerald-400' : 'bg-crimson'
+                }`} />
+                <span className="font-semibold text-sm">{activeDatasetOpt.label}</span>
               </div>
               <ChevronDown
                 size={16}
@@ -82,25 +104,37 @@ export default function AnalysisConfig({
             </button>
 
             {dropdownOpen && (
-              <div className="absolute top-full mt-1.5 left-0 right-0 z-30 rounded-xl bg-[#060205]/95 border border-white/[0.15] shadow-[0_15px_35px_rgba(0,0,0,0.9)] backdrop-blur-xl py-1 overflow-hidden">
-                {DATASET_OPTIONS.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => {
-                      if (onDatasetChange) onDatasetChange(opt)
-                      setDropdownOpen(false)
-                    }}
-                    className={`w-full flex items-center justify-between px-4 py-2.5 text-sm font-mono transition-colors text-left cursor-pointer ${
-                      dataset === opt
-                        ? 'bg-crimson/20 text-white font-bold'
-                        : 'text-text-secondary hover:text-white hover:bg-white/[0.05]'
-                    }`}
-                  >
-                    <span>{opt}</span>
-                    {dataset === opt && <Check size={15} className="text-crimson" />}
-                  </button>
-                ))}
+              <div className="absolute top-full mt-1.5 left-0 right-0 z-30 rounded-xl bg-[#060205]/95 border border-white/[0.15] shadow-[0_15px_35px_rgba(0,0,0,0.9)] backdrop-blur-xl py-1 overflow-hidden max-h-72 overflow-y-auto">
+                {DATASET_OPTIONS.map((opt) => {
+                  const isSelected = activeDatasetOpt.id.toLowerCase() === opt.id.toLowerCase()
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        if (onDatasetChange) onDatasetChange(opt.id)
+                        setDropdownOpen(false)
+                      }}
+                      className={`w-full flex items-center justify-between px-4 py-2.5 text-sm font-mono transition-colors text-left cursor-pointer ${
+                        isSelected
+                          ? 'bg-crimson/20 text-white font-bold'
+                          : 'text-text-secondary hover:text-white hover:bg-white/[0.05]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>{opt.label}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded border font-mono ${
+                          opt.taskType === 'Classification'
+                            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                            : 'bg-crimson/15 text-crimson border-crimson/30'
+                        }`}>
+                          {opt.taskType}
+                        </span>
+                      </div>
+                      {isSelected && <Check size={15} className="text-crimson" />}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -118,7 +152,7 @@ export default function AnalysisConfig({
             </span>
           </label>
 
-          <div className="grid grid-cols-4 gap-1.5 p-1.5 rounded-xl bg-black/60 border border-white/[0.08]">
+          <div className="grid grid-cols-2 gap-1.5 p-1.5 rounded-xl bg-black/60 border border-white/[0.08]">
             {SHOT_OPTIONS.map((shot) => {
               const isSelected = shotMode === shot
               return (

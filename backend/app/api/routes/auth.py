@@ -9,6 +9,7 @@ from app.schemas.auth import (
     UserResponse,
     TokenResponse,
     LogoutResponse,
+    DemoAuthResponse,
 )
 from app.services.auth import register_user, authenticate_user
 from app.core.security import create_access_token
@@ -95,6 +96,28 @@ async def get_me(
 async def logout() -> LogoutResponse:
     """Stateless logout endpoint."""
     return LogoutResponse(message="Successfully logged out")
+
+
+@router.get(
+    "/demo",
+    response_model=DemoAuthResponse,
+    summary="Get verified demo credentials",
+    description="Provides pre-seeded research account credentials for seamless platform exploration.",
+)
+async def get_demo_credentials() -> DemoAuthResponse:
+    """Return demo authentication credentials for testing and exploration."""
+    return DemoAuthResponse(
+        login={
+            "email": "dr.sharma@aiims.edu",
+            "password": "microscopy-lab-key-2026",
+        },
+        signup={
+            "name": "Dr. Evelyn Sharma",
+            "email": "dr.evelyn.researcher@aiims.edu",
+            "password": "microscopy-lab-key-2026",
+            "confirmPassword": "microscopy-lab-key-2026",
+        },
+    )
 
 
 @router.get(

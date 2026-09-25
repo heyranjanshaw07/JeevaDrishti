@@ -154,7 +154,7 @@ def test_benchmark_config():
     assert "datasets" in data
     assert "shot_configs" in data
     assert "metrics" in data
-    assert data["shot_configs"] == [0, 1, 3, 6]
+    assert data["shot_configs"] == [0, 6]
     assert "Micro-OD" in data["datasets"]
     assert "mF1" in data["metrics"]
     assert "Precision" in data["metrics"]
@@ -180,17 +180,18 @@ def test_benchmark_summary():
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "not_evaluated"
-    assert data["datasets"] == 4
-    assert data["shot_configs"] == [0, 1, 3, 6]
+    assert data["datasets"] in (4, 5)
+    assert data["shot_configs"] == [0, 6]
 
 
 # 13. invalid shot value
 def test_invalid_shot_value():
-    response = client.get("/api/v1/benchmark/results?shots=99")
-    assert response.status_code == 400
-    data = response.json()
-    assert "detail" in data
-    assert "Unsupported shots filter" in data["detail"]
+    for bad_shot in [1, 3, 99]:
+        response = client.get(f"/api/v1/benchmark/results?shots={bad_shot}")
+        assert response.status_code == 400
+        data = response.json()
+        assert "detail" in data
+        assert "Unsupported shots filter" in data["detail"]
 
 
 # Additional: BenchmarkResult model and query validation

@@ -10,18 +10,6 @@ const SHOT_LEVELS = [
     dots: 0,
   },
   {
-    shot: '1 Shot',
-    spec: '1 visual example',
-    desc: 'Single visual exemplar orienting the model to stain and morphology.',
-    dots: 1,
-  },
-  {
-    shot: '3 Shot',
-    spec: '3 visual examples',
-    desc: 'Triad reference set capturing intra-class biological variations.',
-    dots: 3,
-  },
-  {
     shot: '6 Shot',
     spec: '6 visual examples',
     desc: 'Standardized reference bank for comprehensive visual guidance.',
@@ -43,13 +31,13 @@ export default function FewShotConcept() {
             From Zero-Shot to Few-Shot
           </h3>
         </div>
-        <p className="text-xs sm:text-sm text-text-secondary leading-relaxed font-sans max-w-2xl">
-          Few-shot configurations provide visual examples that can guide the model toward the target cellular morphology.
+        <p className="text-sm text-text-secondary font-sans">
+          How contextual prompt images provide an inductive bias for morphological cellular inference.
         </p>
       </div>
 
       {/* Shot Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {SHOT_LEVELS.map((item, idx) => (
           <motion.div
             key={item.shot}

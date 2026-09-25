@@ -41,6 +41,9 @@ class Settings(BaseSettings):
 
     # Benchmark / Research Evaluation
     MICRO_OD_PATH: str | None = None  # Defaults to <repo-root>/datasets/Micro-OD
+    # Root directory containing all datasets (Micro-OD, Malaria, Leukemia, etc.)
+    # Defaults to <repo-root>/datasets when not set.
+    DATASETS_ROOT: str | None = None
     MAX_BENCHMARK_CANDIDATES: int = 200  # No live-demo cap during research evaluation
     BENCHMARK_IOU_THRESHOLD: float = 0.50  # Fixed IoU matching threshold (COCO standard)
 
@@ -51,6 +54,13 @@ class Settings(BaseSettings):
         case_sensitive=True,
         extra="ignore",
     )
+
+    @property
+    def datasets_root_path(self) -> Path:
+        """Resolve root path for datasets, using DATASETS_ROOT if set, else auto-discovering repo/datasets."""
+        if self.DATASETS_ROOT:
+            return Path(self.DATASETS_ROOT)
+        return Path(__file__).resolve().parents[3] / "datasets"
 
     @property
     def cors_origins_list(self) -> List[str]:

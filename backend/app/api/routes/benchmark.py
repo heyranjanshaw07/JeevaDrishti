@@ -7,6 +7,7 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.benchmark import (
     BenchmarkConfigResponse,
+    BenchmarkMatrixResponse,
     BenchmarkResultsResponse,
     BenchmarkRunRequest,
     BenchmarkRunResponse,
@@ -14,6 +15,7 @@ from app.schemas.benchmark import (
 )
 from app.services.benchmark_service import (
     get_benchmark_config,
+    get_benchmark_matrix,
     get_benchmark_summary,
     get_benchmark_results,
     run_benchmark_experiment,
@@ -27,7 +29,7 @@ router = APIRouter(prefix="/benchmark", tags=["Benchmark & Evaluation"])
     response_model=BenchmarkConfigResponse,
     status_code=status.HTTP_200_OK,
     summary="Get benchmark configuration",
-    description="Returns supported benchmark datasets, zero/few-shot configurations (0, 1, 3, 6), and evaluation metrics.",
+    description="Returns supported benchmark datasets, zero/few-shot configurations (0, 6), and evaluation metrics.",
 )
 def retrieve_benchmark_config() -> BenchmarkConfigResponse:
     return get_benchmark_config()
@@ -42,7 +44,7 @@ def retrieve_benchmark_config() -> BenchmarkConfigResponse:
 )
 def retrieve_benchmark_results(
     dataset: Optional[str] = Query(None, description="Optional dataset filter (e.g. Micro-OD, BBBC)"),
-    shots: Optional[int] = Query(None, description="Optional shot count filter (0, 1, 3, 6)"),
+    shots: Optional[int] = Query(None, description="Optional shot count filter (0, 6)"),
     db: Session = Depends(get_db),
 ) -> BenchmarkResultsResponse:
     return get_benchmark_results(db=db, dataset=dataset, shots=shots)
@@ -73,3 +75,20 @@ def execute_benchmark_experiment(
 ) -> BenchmarkRunResponse:
     return run_benchmark_experiment(db=db, dataset=payload.dataset, shots=payload.shots)
 
+
+@router.get(
+    "/matrix",
+    response_model=BenchmarkMatrixResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get benchmark evaluation matrix",
+    description=(
+        "Returns a task-aware 5\u00d72 Dataset \u00d7 Shot evaluation matrix. "
+        "IoU is null for CELL_CLASSIFICATION datasets; "
+        "Accuracy is null for OBJECT_DETECTION datasets. "
+        "Unevaluated cells have status='not_evaluated' with all metrics null."
+    ),
+)
+def retrieve_benchmark_matrix(
+    db: Session = Depends(get_db),
+) -> BenchmarkMatrixResponse:
+    return get_benchmark_matrix(db=db)

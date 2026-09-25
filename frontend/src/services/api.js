@@ -190,6 +190,13 @@ export async function logoutUser() {
   } catch { /* fire-and-forget */ }
 }
 
+/**
+ * Retrieve verified demo researcher credentials from backend.
+ */
+export async function getDemoAuthCredentials() {
+  return request('GET', '/auth/demo')
+}
+
 // ─── Analysis — Upload ───────────────────────────────────────────────────────
 
 /**
@@ -407,7 +414,7 @@ export async function getBenchmarkConfig() {
   } catch {
     return {
       datasets: MOCK_BENCHMARK_DATA.datasets,
-      shots: [0, 1, 3, 6],
+      shots: [0, 6],
       metrics: ['mF1', 'precision', 'recall', 'mAP50', 'iou', 'latency_ms'],
     }
   }
@@ -426,9 +433,28 @@ export async function getBenchmarkResults({ dataset, shots } = {}) {
     const query = params.toString() ? `?${params.toString()}` : ''
     return await request('GET', `/benchmark/results${query}`)
   } catch {
-    return { results: [], total: 0 }
+    return { items: [], total: 0 }
   }
 }
+
+/**
+ * Get 5x2 Dataset x Shot evaluation matrix.
+ */
+export async function getBenchmarkMatrix() {
+  try {
+    return await request('GET', '/benchmark/matrix')
+  } catch {
+    return { cells: [], datasets: [], shot_configs: [0, 6], total_cells: 0, evaluated_cells: 0 }
+  }
+}
+
+/**
+ * Execute a single benchmark experiment via POST /benchmark/run
+ */
+export async function runBenchmarkExperiment({ dataset, shots }) {
+  return await request('POST', '/benchmark/run', { dataset, shots }, false, true)
+}
+
 
 // ─── Connectivity Check ──────────────────────────────────────────────────────
 
@@ -450,19 +476,11 @@ export async function isApiAvailable() {
 
 export const MOCK_BENCHMARK_DATA = {
   datasets: ['BCCD', 'BBBC', 'LIVECell', 'NIH-3T3'],
-  shots: ['0-shot', '1-shot', '3-shot', '6-shot'],
+  shots: ['0-shot', '6-shot'],
   metrics: {
     '0-shot': {
       mF1: 0.412, precision: 0.398, recall: 0.427,
       mAP50: 0.389, iou: 0.352, latency_ms: 1240, vlm_calls: 1,
-    },
-    '1-shot': {
-      mF1: 0.581, precision: 0.563, recall: 0.601,
-      mAP50: 0.554, iou: 0.498, latency_ms: 980, vlm_calls: 2,
-    },
-    '3-shot': {
-      mF1: 0.714, precision: 0.698, recall: 0.731,
-      mAP50: 0.682, iou: 0.631, latency_ms: 1100, vlm_calls: 4,
     },
     '6-shot': {
       mF1: 0.798, precision: 0.782, recall: 0.816,
@@ -470,10 +488,10 @@ export const MOCK_BENCHMARK_DATA = {
     },
   },
   per_dataset: {
-    BCCD:     { '0-shot': 0.44, '1-shot': 0.61, '3-shot': 0.73, '6-shot': 0.82 },
-    BBBC:     { '0-shot': 0.38, '1-shot': 0.54, '3-shot': 0.68, '6-shot': 0.76 },
-    LIVECell: { '0-shot': 0.41, '1-shot': 0.57, '3-shot': 0.71, '6-shot': 0.79 },
-    'NIH-3T3':{ '0-shot': 0.43, '1-shot': 0.60, '3-shot': 0.72, '6-shot': 0.80 },
+    BCCD:     { '0-shot': 0.44, '6-shot': 0.82 },
+    BBBC:     { '0-shot': 0.38, '6-shot': 0.76 },
+    LIVECell: { '0-shot': 0.41, '6-shot': 0.79 },
+    'NIH-3T3':{ '0-shot': 0.43, '6-shot': 0.80 },
   },
 }
 

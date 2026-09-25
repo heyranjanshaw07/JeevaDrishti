@@ -393,7 +393,7 @@ export default function Dashboard() {
                         Few-Shot Precision Trajectory (mF1)
                       </h3>
                       <p className="text-[11px] font-mono text-text-muted">
-                        Progression across 0-Shot, 1-Shot, 3-Shot, and 6-Shot regimes
+                        Progression across 0-Shot and 6-Shot regimes
                       </p>
                     </div>
                   </div>
@@ -595,9 +595,9 @@ export default function Dashboard() {
                   </p>
                 </div>
 
-                {/* 4 Interactive Shot Buttons with Elevation & Glow */}
+                {/* 2 Interactive Shot Buttons with Elevation & Glow */}
                 <div className="flex items-center gap-2 p-1.5 rounded-xl bg-black/60 border border-white/[0.08] shrink-0">
-                  {['0-SHOT', '1-SHOT', '3-SHOT', '6-SHOT'].map((shot) => {
+                  {['0-SHOT', '6-SHOT'].map((shot) => {
                     const isSelected = selectedShotMode === shot
                     return (
                       <button

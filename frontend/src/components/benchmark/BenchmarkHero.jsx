@@ -4,8 +4,6 @@ import GlassCard from '@/components/ui/GlassCard'
 
 const SHOT_MODES = [
   { label: '0 SHOT', desc: 'Zero-shot foundation prompt' },
-  { label: '1 SHOT', desc: 'Single visual exemplar' },
-  { label: '3 SHOT', desc: 'Triad reference calibration' },
   { label: '6 SHOT', desc: 'Standardized Micro-OD bank' },
 ]
 
@@ -43,12 +41,12 @@ export default function BenchmarkHero() {
           </p>
         </div>
 
-        {/* Experiment Configurations: 0, 1, 3, 6 SHOT (No fake numbers) */}
+        {/* Experiment Configurations: 0 and 6 SHOT */}
         <div>
           <span className="text-xs font-mono uppercase tracking-wider text-text-muted mb-2.5 block">
             Experiment Configurations
           </span>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {SHOT_MODES.map((shot, idx) => (
               <motion.div
                 key={shot.label}

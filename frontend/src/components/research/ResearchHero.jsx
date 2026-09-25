@@ -10,18 +10,6 @@ const SHOT_CONCEPTS = [
     dots: 0,
   },
   {
-    tag: '1-SHOT',
-    label: 'Anchor Exemplar',
-    desc: 'Single visual exemplar provides baseline morphological orientation.',
-    dots: 1,
-  },
-  {
-    tag: '3-SHOT',
-    label: 'Triad Calibration',
-    desc: 'Captures intraclass phenotype variance across staining conditions.',
-    dots: 3,
-  },
-  {
     tag: '6-SHOT',
     label: 'Standard Micro-OD Bank',
     desc: 'Comprehensive exemplar reference set maximizing in-context transfer.',
@@ -43,10 +31,10 @@ export default function ResearchHero() {
         <div className="max-w-3xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-crimson/15 border border-crimson/35 text-[11px] font-mono text-crimson font-bold">
             <Sparkles size={12} />
-            <span>BIOLOGICAL VISION INTELLIGENCE</span>
+            <span>AI MICROSCOPY RESEARCH LABORATORY</span>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-heading font-black text-white tracking-tight leading-tight">
+          <h2 className="text-3xl sm:text-5xl font-heading font-black text-white tracking-tight leading-tight">
             See Deeper. Understand Life.
           </h2>
 
@@ -55,13 +43,13 @@ export default function ResearchHero() {
           </p>
         </div>
 
-        {/* 4 Shot Concepts Progression */}
+        {/* 2 Shot Concepts Progression */}
         <div className="space-y-3 pt-2">
           <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted block">
             Visual In-Context Adaptation Progression
           </span>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {SHOT_CONCEPTS.map((concept, idx) => (
               <motion.div
                 key={concept.tag}

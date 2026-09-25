@@ -47,7 +47,7 @@ def create_dummy_png_bytes(width=200, height=200, color="white"):
 # 1. shot validation
 def test_shot_validation():
     img = Image.new("RGB", (100, 100))
-    for valid_shot in [0, 1, 3, 6]:
+    for valid_shot in [0, 6]:
         # Shot is accepted in validation (mocking SAM to avoid weights check)
         class MockSAM:
             def generate_proposals(self, image, max_candidates=15):
@@ -62,7 +62,7 @@ def test_shot_validation():
         )
         assert res["status"] == "completed"
 
-    for invalid_shot in [-1, 2, 4, 5, 10]:
+    for invalid_shot in [-1, 1, 2, 3, 4, 5, 10]:
         with pytest.raises(HybridInferenceError) as exc_info:
             run_hybrid_inference(
                 image=img,

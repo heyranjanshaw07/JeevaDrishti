@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -10,6 +10,7 @@ import BiologicalIrisScene from '@/components/3d/BiologicalIrisScene'
 import MicroscopeLensTransition from '@/components/transitions/MicroscopeLensTransition'
 import { useAppStore } from '@/store/appStore'
 import { loginUser, signupUser } from '@/services/api'
+import { loadDemoAuthData } from '@/data/demoAuth'
 
 /**
  * Minimalist Logo Mark: Eye + Iris + Biological Cell
@@ -96,48 +97,69 @@ function GoogleIcon({ className = 'w-5 h-5' }) {
  *    - Login form fades and zooms back
  *    - Fullscreen iris returns to its original calm state
  */
-export default function AuthPage({ initialMode = 'login' }) {
+export default function AuthPage({ initialStage = 'eye', initialMode = 'login' }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated, login } = useAppStore()
 
-  // Authentication Visual Stage: 'eye' | 'transitioning-to-login' | 'login' | 'transitioning-to-eye'
-  const [authStage, setAuthStage] = useState('eye')
+  // Authentication Visual Stage: 'eye' | 'transitioning-to-login' | 'login' | 'transitioning-to-eye' | 'transitioning-to-microscope'
+  const [authStage, setAuthStage] = useState(() => {
+    if (initialStage) return initialStage
+    return 'eye'
+  })
 
   // Mode: 'login' | 'signup'
-  const [mode, setMode] = useState(initialMode)
+  const [mode, setMode] = useState(() => {
+    if (location.pathname === '/register' || location.pathname === '/signup') return 'signup'
+    return initialMode || 'login'
+  })
 
   // 3D Iris Interaction States
   const [focusField, setFocusField] = useState(null) // null | 'email' | 'password'
   const [irisAnimState, setIrisAnimState] = useState('idle') // 'idle' | 'transition' | 'reverse-transition' | 'login' | 'signup'
 
-  // Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+  // Form State: Initialize with location.state.demoData if present
+  const [formData, setFormData] = useState(() => ({
+    name: location.state?.demoData?.name || '',
+    email: location.state?.demoData?.email || '',
+    password: location.state?.demoData?.password || '',
+    confirmPassword: location.state?.demoData?.confirmPassword || '',
     rememberMe: true,
-  })
+  }))
 
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [demoLoading, setDemoLoading] = useState(false)
   const [error, setError] = useState('')
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const pendingAuthData = useRef(null)
 
-  // If user is already authenticated, redirect to dashboard (unless completing login transition)
+  // Listen for navigation state carrying demo data
   useEffect(() => {
-    if (isAuthenticated && !isTransitioning) {
+    if (location.state?.demoData) {
+      setFormData((prev) => ({
+        ...prev,
+        ...location.state.demoData,
+      }))
+    }
+  }, [location.state])
+
+  // Redirect already authenticated users safely away from auth routes if not in active transition
+  useEffect(() => {
+    const authRoutes = ['/login', '/signin', '/register', '/signup', '/iris']
+    const isInTransition = authStage === 'transitioning-to-microscope' || isTransitioning || Boolean(pendingAuthData.current)
+
+    if (isAuthenticated && !isInTransition && authRoutes.includes(location.pathname)) {
       navigate('/dashboard', { replace: true })
     }
-  }, [isAuthenticated, isTransitioning, navigate])
+  }, [isAuthenticated, isTransitioning, authStage, location.pathname, navigate])
 
   // Sync mode with route if navigating directly
   useEffect(() => {
-    if (location.pathname === '/signup') {
+    if (location.pathname === '/register' || location.pathname === '/signup') {
       setMode('signup')
-    } else if (location.pathname === '/login') {
+    } else if (location.pathname === '/login' || location.pathname === '/signin') {
       setMode('login')
     }
   }, [location.pathname])
@@ -179,14 +201,14 @@ export default function AuthPage({ initialMode = 'login' }) {
     }, 1500)
   }
 
-  // Switch to Sign Up mode inside login card
+  // Switch to Sign Up mode inside login card (in-place animation)
   const triggerSignUpState = () => {
     setMode('signup')
     setError('')
     window.history.replaceState(null, '', '/signup')
   }
 
-  // Switch to Login mode inside login card
+  // Switch to Login mode inside login card (in-place animation)
   const triggerLoginState = () => {
     setMode('login')
     setError('')
@@ -200,29 +222,34 @@ export default function AuthPage({ initialMode = 'login' }) {
   }
 
   // Quick Demo Auto-Fill
-  const handleAutoFillDemo = () => {
-    if (authStage === 'eye') {
-      handleEnterLogin()
-    }
-    if (mode === 'login') {
-      setFormData((prev) => ({
-        ...prev,
-        email: 'dr.sharma@aiims.edu',
-        password: 'microscopy-lab-key-2026',
-      }))
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        name: 'Dr. Evelyn Sharma',
-        email: 'evelyn.sharma@aiims.edu',
-        password: 'microscopy-lab-key-2026',
-        confirmPassword: 'microscopy-lab-key-2026',
-      }))
-    }
+  const handleAutoFillDemo = async () => {
+    if (demoLoading) return
+
+    setDemoLoading(true)
     setError('')
+
+    try {
+      const demoData = await loadDemoAuthData(mode)
+
+      // Always populate the credentials into form state
+      setFormData((prev) => ({
+        ...prev,
+        ...demoData,
+      }))
+
+      // If clicked from Eye view, play forward transition into the login card
+      if (authStage === 'eye') {
+        handleEnterLogin()
+      }
+    } catch (err) {
+      console.error('Failed to load demo auth data:', err)
+      setError('Unable to load demo credentials. Please try again.')
+    } finally {
+      setDemoLoading(false)
+    }
   }
 
-  // Form Submission — wired to real FastAPI backend
+  // Form Submission — triggers Iris Screen transition -> Microscope Lens transition -> Dashboard
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -236,11 +263,21 @@ export default function AuthPage({ initialMode = 'login' }) {
 
       try {
         const data = await loginUser({ email: formData.email, password: formData.password })
-        login({ ...data.user, token: data.token })
-        if (formData.rememberMe) {
-          localStorage.setItem('jeevadrishti_remember', 'true')
+        pendingAuthData.current = {
+          ...data.user,
+          token: data.token,
+          rememberMe: formData.rememberMe,
         }
-        setIsTransitioning(true)
+
+        // 1. Trigger Fullscreen Iris Screen Transition
+        setLoading(false)
+        setAuthStage('transitioning-to-microscope')
+        setIrisAnimState('transition')
+
+        // 2. After 1.8s Iris animation, trigger MicroscopeLensTransition
+        setTimeout(() => {
+          setIsTransitioning(true)
+        }, 1800)
       } catch (err) {
         setLoading(false)
         setError(err.message || 'Login failed. Please check your credentials.')
@@ -264,8 +301,21 @@ export default function AuthPage({ initialMode = 'login' }) {
           email: formData.email,
           password: formData.password,
         })
-        login({ ...data.user, token: data.token })
-        setIsTransitioning(true)
+        pendingAuthData.current = {
+          ...data.user,
+          token: data.token,
+          rememberMe: formData.rememberMe,
+        }
+
+        // 1. Trigger Fullscreen Iris Screen Transition
+        setLoading(false)
+        setAuthStage('transitioning-to-microscope')
+        setIrisAnimState('transition')
+
+        // 2. After 1.8s Iris animation, trigger MicroscopeLensTransition
+        setTimeout(() => {
+          setIsTransitioning(true)
+        }, 1800)
       } catch (err) {
         setLoading(false)
         setError(err.message || 'Registration failed. Please try again.')
@@ -274,8 +324,18 @@ export default function AuthPage({ initialMode = 'login' }) {
   }
 
   const handleTransitionComplete = () => {
-    navigate('/dashboard')
+    if (pendingAuthData.current) {
+      const auth = pendingAuthData.current
+      login({ ...auth, token: auth.token })
+      if (auth.rememberMe) {
+        localStorage.setItem('jeevadrishti_remember', 'true')
+      }
+      pendingAuthData.current = null
+    }
+    navigate('/dashboard', { replace: true })
   }
+
+
 
   return (
     <div className="relative min-h-screen w-full bg-[#060205] text-white flex items-center justify-center overflow-hidden select-none">
@@ -301,12 +361,12 @@ export default function AuthPage({ initialMode = 'login' }) {
       <motion.div
         initial={false}
         animate={{
-          scale: authStage === 'transitioning-to-login' ? 3.6 : 1,
-          opacity: (authStage === 'transitioning-to-login' || authStage === 'login') ? 0 : 1,
-          filter: authStage === 'transitioning-to-login' ? 'blur(10px)' : 'blur(0px)',
+          scale: (authStage === 'transitioning-to-login' || authStage === 'transitioning-to-microscope') ? 3.6 : 1,
+          opacity: authStage === 'login' ? 0 : 1,
+          filter: (authStage === 'transitioning-to-login' || authStage === 'transitioning-to-microscope') ? 'blur(10px)' : 'blur(0px)',
         }}
         transition={{
-          duration: authStage === 'transitioning-to-login' ? 1.8 : 1.4,
+          duration: (authStage === 'transitioning-to-login' || authStage === 'transitioning-to-microscope') ? 1.8 : 1.4,
           ease: [0.16, 1, 0.3, 1],
         }}
         style={{
@@ -331,14 +391,17 @@ export default function AuthPage({ initialMode = 'login' }) {
             </div>
           </Link>
 
-          <button
-            type="button"
-            onClick={handleAutoFillDemo}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-mono text-white/80 hover:text-white transition-all cursor-pointer shadow-sm"
-          >
-            <Sparkles size={13} className="text-crimson" />
-            <span>Demo Fill</span>
-          </button>
+          {authStage !== 'transitioning-to-microscope' && (
+            <button
+              type="button"
+              onClick={handleAutoFillDemo}
+              disabled={demoLoading}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-mono text-white/80 hover:text-white transition-all cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <Sparkles size={13} className="text-crimson" />
+              <span>{demoLoading ? 'Loading Demo...' : 'Demo Fill'}</span>
+            </button>
+          )}
         </div>
 
         {/* 3D Biological Iris Canvas: Fullscreen Interactive Centerpiece */}
@@ -367,32 +430,41 @@ export default function AuthPage({ initialMode = 'login' }) {
             </p>
           </div>
 
-          {/* Touch Iris Prompt Button */}
+          {/* Touch Iris Prompt Button or Post-Auth Optical Gateway Status */}
           <div className="pointer-events-auto">
-            <button
-              type="button"
-              onClick={handleEnterLogin}
-              className="inline-flex items-center gap-3 px-6 py-3.5 rounded-full bg-black/85 hover:bg-black border border-crimson/50 hover:border-crimson text-white text-xs sm:text-sm font-mono backdrop-blur-xl shadow-[0_0_30px_rgba(255,42,85,0.35)] hover:shadow-[0_0_45px_rgba(255,42,85,0.65)] transition-all cursor-pointer group"
-            >
-              <span className="w-2.5 h-2.5 rounded-full bg-crimson animate-pulse shadow-[0_0_10px_#FF2A55]" />
-              <span className="font-bold tracking-wider uppercase">
-                TOUCH IRIS TO ENTER
-              </span>
-              <ArrowRight size={15} className="text-crimson group-hover:translate-x-1.5 transition-transform" />
-            </button>
+            {authStage === 'transitioning-to-microscope' ? (
+              <div className="inline-flex items-center gap-3 px-6 py-3.5 rounded-full bg-black/85 border border-crimson/50 text-white text-xs sm:text-sm font-mono backdrop-blur-xl shadow-[0_0_30px_rgba(255,42,85,0.35)]">
+                <span className="w-2.5 h-2.5 rounded-full bg-crimson animate-pulse shadow-[0_0_10px_#FF2A55]" />
+                <span className="font-bold tracking-wider uppercase">
+                  AUTHENTICATION VERIFIED // OPENING OPTICAL GATEWAY
+                </span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleEnterLogin}
+                className="inline-flex items-center gap-3 px-6 py-3.5 rounded-full bg-black/85 hover:bg-black border border-crimson/50 hover:border-crimson text-white text-xs sm:text-sm font-mono backdrop-blur-xl shadow-[0_0_30px_rgba(255,42,85,0.35)] hover:shadow-[0_0_45px_rgba(255,42,85,0.65)] transition-all cursor-pointer group"
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-crimson animate-pulse shadow-[0_0_10px_#FF2A55]" />
+                <span className="font-bold tracking-wider uppercase">
+                  TOUCH IRIS TO ENTER
+                </span>
+                <ArrowRight size={15} className="text-crimson group-hover:translate-x-1.5 transition-transform" />
+              </button>
+            )}
           </div>
         </div>
       </motion.div>
 
       {/* ─── Optical Scanning & Light Burst Overlay ────────────────────────── */}
-      {(authStage === 'transitioning-to-login' || authStage === 'transitioning-to-eye') && (
+      {(authStage === 'transitioning-to-login' || authStage === 'transitioning-to-eye' || authStage === 'transitioning-to-microscope') && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{
-            opacity: authStage === 'transitioning-to-login' ? [0, 0.85, 1, 0] : [0, 0.7, 0],
+            opacity: (authStage === 'transitioning-to-login' || authStage === 'transitioning-to-microscope') ? [0, 0.85, 1, 0] : [0, 0.7, 0],
           }}
           transition={{
-            duration: authStage === 'transitioning-to-login' ? 1.8 : 1.4,
+            duration: (authStage === 'transitioning-to-login' || authStage === 'transitioning-to-microscope') ? 1.8 : 1.4,
             ease: [0.16, 1, 0.3, 1],
           }}
           className="fixed inset-0 z-20 pointer-events-none flex items-center justify-center overflow-hidden"
@@ -400,11 +472,11 @@ export default function AuthPage({ initialMode = 'login' }) {
           {/* Central crimson photon dilation */}
           <motion.div
             animate={{
-              scale: authStage === 'transitioning-to-login' ? [0.2, 1.4, 3.8] : [3.2, 1.0, 0.2],
+              scale: (authStage === 'transitioning-to-login' || authStage === 'transitioning-to-microscope') ? [0.2, 1.4, 3.8] : [3.2, 1.0, 0.2],
               opacity: [0.2, 0.9, 0],
             }}
             transition={{
-              duration: authStage === 'transitioning-to-login' ? 1.8 : 1.4,
+              duration: (authStage === 'transitioning-to-login' || authStage === 'transitioning-to-microscope') ? 1.8 : 1.4,
               ease: [0.16, 1, 0.3, 1],
             }}
             className="w-[440px] h-[440px] rounded-full bg-gradient-radial from-crimson/50 via-ruby/25 to-transparent blur-3xl absolute"
@@ -413,7 +485,7 @@ export default function AuthPage({ initialMode = 'login' }) {
           {/* Slit-lamp scanning light beam */}
           <motion.div
             animate={{
-              x: authStage === 'transitioning-to-login' ? ['-100%', '100%'] : ['100%', '-100%'],
+              x: (authStage === 'transitioning-to-login' || authStage === 'transitioning-to-microscope') ? ['-100%', '100%'] : ['100%', '-100%'],
               opacity: [0, 1, 0],
             }}
             transition={{ duration: 1.2, ease: 'easeInOut' }}
@@ -421,6 +493,7 @@ export default function AuthPage({ initialMode = 'login' }) {
           />
         </motion.div>
       )}
+
 
       {/* ───────────────────────────────────────────────────────────────────
           2. AUTHENTICATION PANEL (LOGIN / SIGN UP PAGE)
@@ -465,10 +538,11 @@ export default function AuthPage({ initialMode = 'login' }) {
               <button
                 type="button"
                 onClick={handleAutoFillDemo}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-sm font-mono text-white/80 hover:text-white transition-all cursor-pointer shadow-sm"
+                disabled={demoLoading}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-sm font-mono text-white/80 hover:text-white transition-all cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Sparkles size={14} className="text-crimson" />
-                <span>Demo Fill</span>
+                <span>{demoLoading ? 'Loading Demo...' : 'Demo Fill'}</span>
               </button>
             </div>
 
@@ -663,10 +737,11 @@ export default function AuthPage({ initialMode = 'login' }) {
                   <button
                     type="button"
                     onClick={handleAutoFillDemo}
-                    className="w-full py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-sm sm:text-base font-mono font-semibold text-white flex items-center justify-center gap-3 transition-all cursor-pointer"
+                    disabled={demoLoading}
+                    className="w-full py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-sm sm:text-base font-mono font-semibold text-white flex items-center justify-center gap-3 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <GoogleIcon />
-                    <span>Continue with Google</span>
+                    <span>{demoLoading ? 'Loading Demo...' : 'Continue with Google'}</span>
                   </button>
 
                   {/* Bottom: Don't have an account? Create Account */}

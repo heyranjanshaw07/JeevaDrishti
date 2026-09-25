@@ -1,11 +1,12 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { AnimatePresence } from 'framer-motion'
 
 import GlobalBackground from '@/components/ui/GlobalBackground'
 import LogoutModal from '@/components/ui/LogoutModal'
 import Landing from '@/pages/Landing'
+import AuthPage from '@/pages/AuthPage'
 import Login from '@/pages/Login'
 import Signup from '@/pages/Signup'
+import Register from '@/pages/Register'
 import Dashboard from '@/pages/Dashboard'
 import Analyze from '@/pages/Analyze'
 import Benchmark from '@/pages/Benchmark'
@@ -24,16 +25,18 @@ export default function App() {
 
   return (
     <GlobalBackground>
-        <LogoutModal />
-        <Routes>
-          {/* 1. Landing */}
-          <Route path="/" element={<Landing />} />
+      <LogoutModal />
+      <Routes>
+        {/* 1. Landing */}
+        <Route path="/" element={<Landing />} />
 
-          {/* 2. Login & Iris Fullscreen Experience */}
+          {/* 2. Fullscreen Iris Experience */}
+          <Route path="/iris" element={<AuthPage initialStage="eye" />} />
+
+          {/* 3. Authentication: Sign In & Register */}
           <Route path="/login" element={<Login />} />
-          <Route path="/iris" element={<Login />} />
-
-          {/* 3. Signup */}
+          <Route path="/signin" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/signup" element={<Signup />} />
 
           {/* 4. Dashboard (Protected) */}

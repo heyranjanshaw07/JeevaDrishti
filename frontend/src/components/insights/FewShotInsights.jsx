@@ -12,24 +12,7 @@ const SHOT_STATES = [
       'In the zero-shot regime, the reasoning model relies purely on its general biomedical and linguistic representations to evaluate candidate visual crops without seeing prior reference crops of the target cell class.',
     supportLevel: 'Zero visual anchors (Semantic baseline)'
   },
-  {
-    id: '1-shot',
-    label: '1 SHOT',
-    subtitle: 'One visual example',
-    summary: 'The model receives one visual example as additional context.',
-    detail:
-      'A single optical exemplar provides initial grounding for staining intensity, background slide noise, and general cell dimensions, helping bridge optical domain variations.',
-    supportLevel: 'Single exemplar anchor'
-  },
-  {
-    id: '3-shot',
-    label: '3 SHOTS',
-    subtitle: 'Three visual examples',
-    summary: 'Additional examples provide a broader visual reference.',
-    detail:
-      'Three exemplar crops capture phenotypic variability, including borderline cell shapes and staining gradients, providing the reasoning model with multi-instance comparison boundaries.',
-    supportLevel: 'Multi-instance morphological variance'
-  },
+
   {
     id: '6-shot',
     label: '6 SHOTS',

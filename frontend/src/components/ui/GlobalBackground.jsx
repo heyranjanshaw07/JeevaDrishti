@@ -14,7 +14,7 @@ import ErrorBoundary from '@/components/ui/ErrorBoundary'
  */
 function GlobalBackground({ children }) {
   const location = useLocation()
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup'
+  const isAuthPage = ['/iris', '/login', '/signin', '/register', '/signup'].includes(location.pathname)
   return (
     <div className="relative min-h-screen w-full bg-lab-void text-text-primary overflow-x-hidden">
       {/* ─── Layer 1: Deep Hematology Darkfield Base ───────────────────── */}

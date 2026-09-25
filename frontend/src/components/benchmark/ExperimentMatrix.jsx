@@ -4,22 +4,37 @@ import GlassCard from '@/components/ui/GlassCard'
 
 const SHOT_ROWS = [
   { shot: 0, label: '0 Shot', desc: 'Zero-shot prompt' },
-  { shot: 1, label: '1 Shot', desc: '1 exemplar' },
-  { shot: 3, label: '3 Shot', desc: '3 exemplars' },
   { shot: 6, label: '6 Shot', desc: '6 exemplars' },
 ]
 
 const DATASET_COLS = [
-  { id: 'BBBC', label: 'BBBC', sub: 'Fluorescence' },
-  { id: 'BCCD', label: 'BCCD', sub: 'Blood Smear' },
-  { id: 'LIVECell', label: 'LIVECell', sub: 'Phase-Contrast' },
-  { id: 'NIH-3T3', label: 'NIH-3T3', sub: 'Fibroblast' },
+  { id: 'micro_od', legacyId: 'Micro-OD', label: 'Micro-OD', sub: 'Detection', taskType: 'object_detection' },
+  { id: 'nih_nlm_malaria', legacyId: 'nih_nlm_malaria', label: 'Malaria', sub: 'Detection', taskType: 'object_detection' },
+  { id: 'c_nmc_2019', legacyId: 'c_nmc_2019', label: 'C-NMC 2019', sub: 'Classification', taskType: 'cell_classification' },
+  { id: 'redtell_anemia', legacyId: 'redtell_anemia', label: 'RedTell', sub: 'Classification', taskType: 'cell_classification' },
+  { id: 'sipakmed', legacyId: 'sipakmed', label: 'SIPaKMeD', sub: 'Classification', taskType: 'cell_classification' },
 ]
 
 /**
  * ExperimentMatrix — Research evaluation matrix grid showing 'Not evaluated' states
  */
-export default function ExperimentMatrix({ selectedShot = 0, selectedDataset = 'Micro-OD' }) {
+export default function ExperimentMatrix({
+  selectedShot = 0,
+  selectedDataset = 'micro_od',
+  matrixCells = [],
+  onSelectCell,
+}) {
+  const getCell = (datasetId, shot) => {
+    return matrixCells.find(
+      (c) =>
+        (c.dataset.toLowerCase() === datasetId.toLowerCase() ||
+          (datasetId === 'micro_od' && c.dataset.toLowerCase() === 'micro-od')) &&
+        c.shots === shot
+    )
+  }
+
+  const evaluatedCount = matrixCells.filter((c) => c.status === 'evaluated' || c.status === 'completed').length
+
   return (
     <GlassCard className="p-6 sm:p-7 border-white/[0.08] relative overflow-hidden space-y-5">
       {/* Header */}
@@ -32,7 +47,7 @@ export default function ExperimentMatrix({ selectedShot = 0, selectedDataset = '
             </h3>
           </div>
           <p className="text-sm text-text-secondary mt-0.5">
-            Cross-dataset evaluation matrix tracking verification status across shot configurations.
+            Cross-dataset 5×2 evaluation matrix tracking real inference results across 0-shot and 6-shot configurations.
           </p>
         </div>
 
@@ -44,14 +59,16 @@ export default function ExperimentMatrix({ selectedShot = 0, selectedDataset = '
 
       {/* Table / Matrix Container (Horizontally Scrollable on small viewports) */}
       <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-white/10 pb-2">
-        <table className="w-full min-w-[560px] text-left border-collapse">
+        <table className="w-full min-w-[620px] text-left border-collapse">
           <thead>
             <tr className="border-b border-white/[0.08]">
               <th className="py-3 px-4 text-xs font-mono font-bold text-text-muted uppercase tracking-wider w-44">
                 Shot Mode
               </th>
               {DATASET_COLS.map((col) => {
-                const isCurrentDataset = selectedDataset === col.id
+                const isCurrentDataset =
+                  (selectedDataset || '').toLowerCase() === col.id.toLowerCase() ||
+                  (selectedDataset || '').toLowerCase() === col.legacyId.toLowerCase()
                 return (
                   <th
                     key={col.id}
@@ -105,19 +122,46 @@ export default function ExperimentMatrix({ selectedShot = 0, selectedDataset = '
                   {/* Dataset Cells */}
                   {DATASET_COLS.map((col) => {
                     const isCellTargeted =
-                      isSelectedRow && (selectedDataset === col.id || selectedDataset === 'Micro-OD')
+                      isSelectedRow && (
+                        (selectedDataset || '').toLowerCase() === col.id.toLowerCase() ||
+                        (selectedDataset || '').toLowerCase() === col.legacyId.toLowerCase()
+                      )
+
+                    const cell = getCell(col.id, row.shot)
+                    const isEvaluated = cell && (cell.status === 'evaluated' || cell.status === 'completed')
+                    const isUnavailable = cell && cell.status === 'not_available'
+
+                    let label = 'Not evaluated'
+                    let badgeClass = 'bg-black/30 border-white/[0.05] text-text-muted'
+
+                    if (isEvaluated) {
+                      if (cell.accuracy !== null && cell.accuracy !== undefined) {
+                        label = `${(cell.accuracy * 100).toFixed(1)}% Acc`
+                      } else if (cell.mf1 !== null && cell.mf1 !== undefined) {
+                        label = `${(cell.mf1 * 100).toFixed(1)}% mF1`
+                      } else {
+                        label = 'Complete'
+                      }
+                      badgeClass = 'bg-emerald-500/15 border-emerald-500/35 text-emerald-300 font-bold'
+                    } else if (isUnavailable) {
+                      label = 'Unavailable'
+                      badgeClass = 'bg-amber-500/10 border-amber-500/25 text-amber-400 font-medium'
+                    }
+
+                    if (isCellTargeted) {
+                      badgeClass += ' ring-2 ring-crimson shadow-[0_0_12px_rgba(255,42,85,0.25)]'
+                    }
 
                     return (
                       <td key={col.id} className="py-3.5 px-4 text-center">
-                        <div
-                          className={`inline-flex items-center justify-center px-3.5 py-1.5 rounded-lg border font-mono transition-all ${
-                            isCellTargeted
-                              ? 'bg-crimson/10 border-crimson/35 text-white shadow-[0_0_12px_rgba(255,42,85,0.15)] font-semibold'
-                              : 'bg-black/30 border-white/[0.05] text-text-muted'
-                          }`}
+                        <button
+                          type="button"
+                          onClick={() => onSelectCell && onSelectCell(col.id, row.shot)}
+                          className={`inline-flex items-center justify-center px-3.5 py-1.5 rounded-lg border font-mono text-xs transition-all cursor-pointer ${badgeClass}`}
+                          title={cell?.error_message || `${col.label} ${row.label}: ${label}`}
                         >
-                          <span className="text-xs">Not evaluated</span>
-                        </div>
+                          <span>{label}</span>
+                        </button>
                       </td>
                     )
                   })}
@@ -130,8 +174,8 @@ export default function ExperimentMatrix({ selectedShot = 0, selectedDataset = '
 
       {/* Footer note */}
       <div className="pt-2 border-t border-white/[0.05] flex items-center justify-between text-xs font-mono text-text-muted">
-        <span>STATUS: PENDING EXECUTION</span>
-        <span>16 EXPERIMENT SLOTS</span>
+        <span>STATUS: {evaluatedCount > 0 ? `${evaluatedCount} OF 10 CELLS EVALUATED` : 'PENDING EXECUTION'}</span>
+        <span>10 EXPERIMENT SLOTS (5 DATASETS × 2 SHOTS)</span>
       </div>
     </GlassCard>
   )

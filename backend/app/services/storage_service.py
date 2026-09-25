@@ -10,8 +10,15 @@ from app.core.config import settings
 from app.core.logging import logger
 from app.models.analysis import UploadedFile
 
-ALLOWED_EXTENSIONS: Set[str] = {".png", ".jpg", ".jpeg"}
-ALLOWED_MIME_TYPES: Set[str] = {"image/png", "image/jpeg", "image/jpg"}
+ALLOWED_EXTENSIONS: Set[str] = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
+ALLOWED_MIME_TYPES: Set[str] = {
+    "image/png",
+    "image/jpeg",
+    "image/jpg",
+    "image/bmp",
+    "image/x-ms-bmp",
+    "image/tiff",
+}
 
 
 def validate_and_save_image(
@@ -67,7 +74,7 @@ def validate_and_save_image(
         image = Image.open(io.BytesIO(content))
         width, height = image.size
         img_format = image.format or "UNKNOWN"
-        if img_format not in {"PNG", "JPEG", "MPO"}:
+        if img_format not in {"PNG", "JPEG", "MPO", "BMP", "TIFF"}:
             raise ValueError(f"Unacceptable PIL format: {img_format}")
     except Exception as exc:
         logger.warning("Corrupted or invalid image upload attempt: %s", str(exc))
@@ -78,7 +85,8 @@ def validate_and_save_image(
 
     # 5. Generate secure, unique server-side filename (never trust client filename)
     file_id = str(uuid.uuid4())
-    stored_ext = ".png" if img_format == "PNG" else ".jpg"
+    ext_map = {"PNG": ".png", "BMP": ".bmp", "TIFF": ".tif"}
+    stored_ext = ext_map.get(img_format, ".jpg")
     stored_filename = f"{file_id}{stored_ext}"
     destination_path = settings.upload_path / stored_filename
 

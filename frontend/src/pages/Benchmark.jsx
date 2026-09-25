@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -20,6 +20,7 @@ import {
   LogOut,
 } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
+import { getBenchmarkMatrix, runBenchmarkExperiment } from '@/services/api'
 
 // Part 8A Components
 import BenchmarkHero from '@/components/benchmark/BenchmarkHero'
@@ -50,27 +51,113 @@ export default function Benchmark() {
     openLogoutModal()
   }
 
-  // ─── Part 8B Benchmark State (Configuration only, no fake metrics) ───────────
-  const [selectedDataset, setSelectedDataset] = useState('Micro-OD')
+  // ─── Part 8B Benchmark State (Real evaluation tracking) ────────────────────
+  const [selectedDataset, setSelectedDataset] = useState('c_nmc_2019')
   const [selectedShot, setSelectedShot] = useState(0)
+  const [matrixCells, setMatrixCells] = useState([])
+  const [isRunning, setIsRunning] = useState(false)
+  const [runError, setRunError] = useState(null)
 
-  // Explicit null state: No fake experimental metrics
-  const [metrics] = useState({
-    mF1: null,
-    precision: null,
-    recall: null,
-    iou: null,
-    latency: null,
-    vlmCalls: null,
-  })
+  const fetchMatrix = useCallback(async () => {
+    try {
+      const data = await getBenchmarkMatrix()
+      if (data && data.cells) {
+        setMatrixCells(data.cells)
+      }
+    } catch (err) {
+      console.error('Failed to load benchmark matrix:', err)
+    }
+  }, [])
 
-  // Future chart data structure with honest null values
-  const [chartData] = useState([
-    { shot: '0 Shot', mF1: null, precision: null, recall: null },
-    { shot: '1 Shot', mF1: null, precision: null, recall: null },
-    { shot: '3 Shot', mF1: null, precision: null, recall: null },
-    { shot: '6 Shot', mF1: null, precision: null, recall: null },
-  ])
+  useEffect(() => {
+    fetchMatrix()
+  }, [fetchMatrix])
+
+  const handleRunEvaluation = async (dataset, shots) => {
+    setIsRunning(true)
+    setRunError(null)
+    try {
+      await runBenchmarkExperiment({ dataset, shots })
+      await fetchMatrix()
+    } catch (err) {
+      console.error('Benchmark execution error:', err)
+      setRunError(err.message || 'Benchmark evaluation failed.')
+    } finally {
+      setIsRunning(false)
+    }
+  }
+
+  // Active cell based on selected dataset & shot
+  const activeCell = useMemo(() => {
+    return matrixCells.find(
+      (c) =>
+        (c.dataset.toLowerCase() === selectedDataset.toLowerCase() ||
+          (selectedDataset === 'micro_od' && c.dataset.toLowerCase() === 'micro-od')) &&
+        c.shots === selectedShot
+    ) || null
+  }, [matrixCells, selectedDataset, selectedShot])
+
+  const taskType = activeCell?.task_type || (
+    ['c_nmc_2019', 'redtell_anemia', 'sipakmed'].includes(selectedDataset.toLowerCase())
+      ? 'cell_classification'
+      : 'object_detection'
+  )
+
+  const activeStatus = activeCell?.status || 'not_evaluated'
+
+  const metrics = useMemo(() => {
+    if (!activeCell || activeCell.status === 'not_evaluated' || activeCell.status === 'not_available') {
+      return {
+        mF1: null,
+        precision: null,
+        recall: null,
+        iou: null,
+        accuracy: null,
+        latency: null,
+        vlmCalls: null,
+      }
+    }
+    return {
+      mF1: activeCell.mf1,
+      precision: activeCell.precision,
+      recall: activeCell.recall,
+      iou: activeCell.iou,
+      accuracy: activeCell.accuracy,
+      latency: activeCell.latency,
+      vlmCalls: activeCell.vlm_calls,
+    }
+  }, [activeCell])
+
+  // Few-shot comparison chart data for the current dataset (0-shot vs 6-shot)
+  const chartData = useMemo(() => {
+    const shot0Cell = matrixCells.find(
+      (c) =>
+        (c.dataset.toLowerCase() === selectedDataset.toLowerCase() ||
+          (selectedDataset === 'micro_od' && c.dataset.toLowerCase() === 'micro-od')) &&
+        c.shots === 0
+    )
+    const shot6Cell = matrixCells.find(
+      (c) =>
+        (c.dataset.toLowerCase() === selectedDataset.toLowerCase() ||
+          (selectedDataset === 'micro_od' && c.dataset.toLowerCase() === 'micro-od')) &&
+        c.shots === 6
+    )
+
+    const formatPoint = (label, cell) => {
+      if (!cell || (cell.status !== 'evaluated' && cell.status !== 'completed')) {
+        return { shot: label, mF1: null, precision: null, recall: null }
+      }
+      const f1Val = cell.mf1 !== null && cell.mf1 !== undefined ? Math.round(cell.mf1 * 100) : (cell.accuracy !== null ? Math.round(cell.accuracy * 100) : null)
+      const precVal = cell.precision !== null && cell.precision !== undefined ? Math.round(cell.precision * 100) : null
+      const recVal = cell.recall !== null && cell.recall !== undefined ? Math.round(cell.recall * 100) : null
+      return { shot: label, mF1: f1Val, precision: precVal, recall: recVal }
+    }
+
+    return [
+      formatPoint('0 Shot', shot0Cell),
+      formatPoint('6 Shot', shot6Cell),
+    ]
+  }, [matrixCells, selectedDataset])
 
 
 
@@ -225,18 +312,31 @@ export default function Benchmark() {
             <EvaluationStatus
               selectedShot={selectedShot}
               selectedDataset={selectedDataset}
+              onRunEvaluation={handleRunEvaluation}
+              isRunning={isRunning}
+              activeCellStatus={activeStatus}
+              errorMessage={runError}
             />
 
-            {/* 3: Evaluation Metrics Panel (6 cards with initial '—') */}
-            <MetricsPanel metrics={metrics} />
+            {/* 3: Evaluation Metrics Panel */}
+            <MetricsPanel
+              metrics={metrics}
+              taskType={taskType}
+              status={activeStatus}
+            />
 
-            {/* 4: Few-Shot Performance Chart (Honest empty state) */}
+            {/* 4: Few-Shot Performance Chart */}
             <BenchmarkChart data={chartData} />
 
-            {/* 5: Experiment Matrix (16 cells showing 'Not evaluated') */}
+            {/* 5: Experiment Matrix */}
             <ExperimentMatrix
               selectedShot={selectedShot}
               selectedDataset={selectedDataset}
+              matrixCells={matrixCells}
+              onSelectCell={(ds, shot) => {
+                setSelectedDataset(ds)
+                setSelectedShot(shot)
+              }}
             />
 
             {/* 8: Conceptual Visual: From Zero-Shot to Few-Shot */}

@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { HelpCircle, Activity } from 'lucide-react';
 
-const SHOT_CHIPS = ['0 SHOT', '1 SHOT', '3 SHOTS', '6 SHOTS'];
+const SHOT_CHIPS = ['0 SHOT', '6 SHOTS'];
 
 export default function ResearchQuestion() {
   return (

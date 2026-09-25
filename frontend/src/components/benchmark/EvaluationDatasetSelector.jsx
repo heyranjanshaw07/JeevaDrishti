@@ -2,11 +2,11 @@ import { motion } from 'framer-motion'
 import { Database, Check } from 'lucide-react'
 
 const DATASET_OPTIONS = [
-  { id: 'Micro-OD', label: 'Micro-OD', tag: 'Standard Suite', count: '4 Domains' },
-  { id: 'BBBC', label: 'BBBC', tag: 'Fluorescence', count: '6 Classes' },
-  { id: 'BCCD', label: 'BCCD', tag: 'Blood Smear', count: '3 Classes' },
-  { id: 'LIVECell', label: 'LIVECell', tag: 'Phase Contrast', count: '3 Classes' },
-  { id: 'NIH-3T3', label: 'NIH-3T3', tag: 'Fibroblast Line', count: '3 Classes' },
+  { id: 'micro_od', legacyId: 'Micro-OD', label: 'Micro-OD', tag: 'Benchmark Suite', count: '10 Classes', taskType: 'Detection' },
+  { id: 'nih_nlm_malaria', legacyId: 'nih_nlm_malaria', label: 'NIH-NLM Malaria', tag: 'Thin Blood Smears', count: '2 Classes', taskType: 'Detection' },
+  { id: 'c_nmc_2019', legacyId: 'c_nmc_2019', label: 'C-NMC 2019', tag: 'ALL Leukemia', count: '2 Classes', taskType: 'Classification' },
+  { id: 'redtell_anemia', legacyId: 'redtell_anemia', label: 'RedTell', tag: 'Sickle Cell & Anemia', count: '3 Classes', taskType: 'Classification' },
+  { id: 'sipakmed', legacyId: 'sipakmed', label: 'SIPaKMeD', tag: 'Cervical Cytology', count: '5 Classes', taskType: 'Classification' },
 ]
 
 /**
@@ -29,7 +29,9 @@ export default function EvaluationDatasetSelector({ selectedDataset, onSelectDat
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
         {DATASET_OPTIONS.map((ds) => {
-          const isSelected = selectedDataset === ds.id
+          const isSelected =
+            (selectedDataset || '').toLowerCase() === ds.id.toLowerCase() ||
+            (selectedDataset || '').toLowerCase() === ds.legacyId.toLowerCase()
 
           return (
             <motion.button

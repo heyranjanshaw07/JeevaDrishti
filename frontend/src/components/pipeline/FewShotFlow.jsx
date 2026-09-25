@@ -20,38 +20,6 @@ const SHOT_CONFIGS = [
     ]
   },
   {
-    id: '1-shot',
-    shots: 1,
-    title: '1 Shot',
-    subtitle: 'One visual example',
-    badge: 'Single Anchor',
-    tagline: 'Grounding via a single visual reference anchor',
-    concept:
-      'A single curated microscopy crop with verified cell class boundaries is provided in-context. This grounds staining variations, optical artifacts, and illumination tone for the target specimen class.',
-    properties: [
-      { label: 'Exemplar Memory', val: '1 reference patch per target class' },
-      { label: 'Inductive Bias', val: 'Local stain and contrast alignment' },
-      { label: 'Cold-Start Viability', val: 'Requires 1 verified ground-truth exemplar' },
-      { label: 'Computational Overhead', val: 'Low prompt token expansion' }
-    ]
-  },
-  {
-    id: '3-shot',
-    shots: 3,
-    title: '3 Shots',
-    subtitle: 'Three visual examples',
-    badge: 'Intra-Class Variance',
-    tagline: 'Capturing phenotypic variation and staining spectrum',
-    concept:
-      'Three visual exemplars encompass morphological variations such as irregular cell geometries, subtle stain color gradients, and borderline cell contours, guiding the reasoning model toward robust decision boundaries.',
-    properties: [
-      { label: 'Exemplar Memory', val: '3 reference patches per target class' },
-      { label: 'Inductive Bias', val: 'Multi-modal shape & texture distribution' },
-      { label: 'Cold-Start Viability', val: 'Standard clinical few-shot validation size' },
-      { label: 'Computational Overhead', val: 'Moderate multi-image context payload' }
-    ]
-  },
-  {
     id: '6-shot',
     shots: 6,
     title: '6 Shots',

@@ -1,6 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
-const SHOT_LABELS = ['0-shot', '1-shot', '3-shot', '6-shot']
+const SHOT_LABELS = ['0-shot', '6-shot']
 const DS_COLORS = { BCCD: '#FF2A55', BBBC: '#FFFFFF', LIVECell: '#DC2626', 'NIH-3T3': '#FFA0B4' }
 
 const CustomTooltip = ({ active, payload, label }) => {

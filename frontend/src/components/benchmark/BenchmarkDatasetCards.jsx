@@ -5,36 +5,54 @@ import GlassCard from '@/components/ui/GlassCard'
 
 const DATASETS = [
   {
-    name: 'BBBC',
-    fullName: 'Broad Bioimage Benchmark Collection',
-    testImages: '53',
-    testBoxes: '4,000',
-    classes: '6',
-    modality: 'Fluorescence Microscopy',
+    name: 'Micro-OD',
+    fullName: 'Micro-OD Benchmark Suite',
+    testImages: '212',
+    primaryMetric: '5,551 Boxes',
+    metricLabel: 'Annotation',
+    classes: '10',
+    taskType: 'Detection',
+    modality: 'Fluorescence & Phase-Contrast',
   },
   {
-    name: 'BCCD',
-    fullName: 'Blood Cell Count and Detection',
-    testImages: '53',
-    testBoxes: '952',
-    classes: '3',
-    modality: 'Peripheral Blood Smears',
+    name: 'NIH-NLM Malaria',
+    fullName: 'Thin Blood Smears Pf',
+    testImages: '138',
+    primaryMetric: 'Polygon GT',
+    metricLabel: 'Annotation',
+    classes: '2',
+    taskType: 'Detection',
+    modality: 'Thin Blood Smear Microscopy',
   },
   {
-    name: 'LIVECell',
-    fullName: 'Large-scale Phase Contrast Cell Dataset',
-    testImages: '53',
-    testBoxes: '223',
-    classes: '3',
-    modality: 'Phase-Contrast Label-Free',
+    name: 'C-NMC 2019',
+    fullName: 'B-lineage ALL Leukemia',
+    testImages: '988',
+    primaryMetric: 'Cell-level',
+    metricLabel: 'Task Type',
+    classes: '2',
+    taskType: 'Classification',
+    modality: 'Peripheral Blood Smear',
   },
   {
-    name: 'NIH-3T3',
-    fullName: 'Mouse Embryonic Fibroblast Cell Line',
-    testImages: '53',
-    testBoxes: '376',
+    name: 'RedTell Anemia',
+    fullName: 'SCD & Thalassemia RBCs',
+    testImages: '73',
+    primaryMetric: 'Cell-level',
+    metricLabel: 'Task Type',
     classes: '3',
-    modality: 'Brightfield / Phase Cells',
+    taskType: 'Classification',
+    modality: 'RBC Morphology Cytology',
+  },
+  {
+    name: 'SIPaKMeD',
+    fullName: 'Cervical Pap Smear Cytology',
+    testImages: '956',
+    primaryMetric: 'Cytology',
+    metricLabel: 'Task Type',
+    classes: '5',
+    taskType: 'Classification',
+    modality: 'Pap Smear Optical Cytology',
   },
 ]
 
@@ -53,12 +71,12 @@ export default function BenchmarkDatasetCards() {
             </h3>
           </div>
           <p className="text-sm text-text-secondary mt-0.5">
-            Four specialized cellular microscopy domains evaluated under identical few-shot conditions.
+            Five specialized cellular microscopy domains evaluated under unified zero-shot and 6-shot benchmark conditions.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {DATASETS.map((ds, idx) => (
           <motion.div
             key={ds.name}
@@ -110,12 +128,12 @@ export default function BenchmarkDatasetCards() {
                   <div>
                     <div className="flex items-center gap-1 text-xs font-mono text-text-muted mb-0.5">
                       <Box size={13} className="text-crimson" />
-                      <span>Boxes</span>
+                      <span>{ds.metricLabel}</span>
                     </div>
-                    <span className="text-base font-mono font-bold text-white">
-                      {ds.testBoxes}
+                    <span className="text-sm font-mono font-bold text-white">
+                      {ds.primaryMetric}
                     </span>
-                    <span className="block text-[11px] font-mono text-text-muted">Test</span>
+                    <span className="block text-[11px] font-mono text-text-muted">{ds.taskType}</span>
                   </div>
 
                   <div>

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 
-const SHOTS = ['0-shot', '1-shot', '3-shot', '6-shot']
+const SHOTS = ['0-shot', '6-shot']
 
 /**
  * Few-shot mode selector — pill-style toggle

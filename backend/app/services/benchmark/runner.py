@@ -48,7 +48,11 @@ from app.services.benchmark.metrics import (
     compute_mf1,
     compute_overall_precision_recall,
     compute_mean_iou,
+    compute_classification_metrics,
 )
+from app.services.datasets.registry import DATASET_REGISTRY, get_adapter_safe
+from app.services.datasets.base import TaskType
+from app.services.inference.hybrid_engine import run_classification_inference
 from app.services.inference.sam_service import sam_service, AIModelUnavailableError
 from app.services.inference.vlm_service import (
     get_vlm_provider,
@@ -56,7 +60,9 @@ from app.services.inference.vlm_service import (
 )
 
 
-SUPPORTED_SHOTS = [0, 1, 3, 6]
+SUPPORTED_SHOTS = [0, 6]
+CANONICAL_DATASETS = list(DATASET_REGISTRY.keys())
+ALL_SUPPORTED_DATASETS = list(dict.fromkeys(SUPPORTED_DATASETS + CANONICAL_DATASETS + ["Micro-OD"]))
 
 
 # ---------------------------------------------------------------------------
@@ -72,8 +78,8 @@ def run_benchmark(
     Execute a single benchmark experiment: dataset × shots.
 
     Args:
-        dataset : One of SUPPORTED_DATASETS or "Micro-OD" (all four).
-        shots   : 0, 1, 3, or 6.
+        dataset : One of ALL_SUPPORTED_DATASETS.
+        shots   : 0 or 6.
         db      : SQLAlchemy Session for result persistence (optional).
 
     Returns:
@@ -82,19 +88,42 @@ def run_benchmark(
     if shots not in SUPPORTED_SHOTS:
         raise ValueError(f"Unsupported shot count {shots}. Allowed: {SUPPORTED_SHOTS}")
 
-    # Expand "Micro-OD" to all four sub-datasets
-    if dataset == "Micro-OD":
+    dataset_clean = dataset.strip()
+
+    # Expand "Micro-OD" or "micro_od" to all four sub-datasets
+    if dataset_clean.lower() in ("micro-od", "micro_od"):
         sub_results = [
             run_benchmark(ds, shots, db=None)  # don't persist sub-results individually
             for ds in SUPPORTED_DATASETS
         ]
         combined = _combine_results(sub_results, shots)
+        combined.config.dataset = dataset_clean
+        combined.task_type = "object_detection"
+        combined.accuracy = None
         if db is not None:
             _persist_result(combined, db)
         return combined
 
-    if dataset not in SUPPORTED_DATASETS:
-        raise ValueError(f"Unsupported dataset '{dataset}'. Allowed: {SUPPORTED_DATASETS}")
+    # Check for registered unified adapter
+    adapter = get_adapter_safe(dataset_clean)
+    if adapter is not None and adapter.task_type == TaskType.CELL_CLASSIFICATION:
+        vlm_model_name = settings.VLM_MODEL or "gemini-2.5-flash"
+        vlm_provider_name = settings.VLM_PROVIDER or "gemini"
+        config = ExperimentConfig(
+            dataset=dataset_clean,
+            shots=shots,
+            iou_threshold=settings.BENCHMARK_IOU_THRESHOLD,
+            max_candidates=settings.MAX_BENCHMARK_CANDIDATES,
+            vlm_model=vlm_model_name,
+            vlm_provider=vlm_provider_name,
+        )
+        return _run_classification_benchmark(adapter=adapter, shots=shots, config=config, db=db)
+
+    if adapter is not None and adapter.task_type == TaskType.OBJECT_DETECTION and dataset_clean not in SUPPORTED_DATASETS:
+        return _run_adapter_detection_benchmark(adapter=adapter, shots=shots, db=db)
+
+    if dataset_clean not in ALL_SUPPORTED_DATASETS:
+        raise ValueError(f"Unsupported dataset '{dataset_clean}'. Allowed: {ALL_SUPPORTED_DATASETS}")
 
     # ── Build config ──────────────────────────────────────────────────────────
     vlm_model_name = settings.VLM_MODEL or "gemini-2.5-flash"
@@ -284,6 +313,238 @@ def run_full_benchmark(db=None) -> List[ExperimentResult]:
 
 
 # ---------------------------------------------------------------------------
+# Classification & Unified Adapter Benchmark Runners
+# ---------------------------------------------------------------------------
+
+def _run_classification_benchmark(
+    adapter,
+    shots: int,
+    config: ExperimentConfig,
+    db=None,
+) -> ExperimentResult:
+    """Execute evaluation for a CELL_CLASSIFICATION dataset (whole-image inference, no SAM)."""
+    result = ExperimentResult(
+        config=config,
+        status="running",
+        task_type=TaskType.CELL_CLASSIFICATION.value,
+        accuracy=None,
+        mean_iou=None,  # NEVER compute IoU for classification datasets!
+    )
+
+    try:
+        vlm = get_vlm_provider(config.vlm_provider)
+    except VLMNotConfiguredError as exc:
+        result.status = "not_available"
+        result.error_message = str(exc)
+        if db is not None:
+            _persist_result(result, db)
+        return result
+
+    # 1. Load support examples to exclude them from evaluation images
+    support_examples = adapter.get_support_examples(shots) if shots > 0 else []
+    support_paths = {str(ex.image_path) for ex in support_examples}
+
+    # 2. Collect test images (balanced across classes, up to 10 per class)
+    all_images = adapter.list_images(limit=100)
+    images_by_class: dict = {c: [] for c in adapter.classes}
+    for img in all_images:
+        if str(img.path) in support_paths:
+            continue
+        cls = img.class_label
+        if cls in images_by_class and len(images_by_class[cls]) < 10:
+            images_by_class[cls].append(img)
+
+    test_images = []
+    for cls in adapter.classes:
+        test_images.extend(images_by_class[cls])
+
+    if not test_images:
+        result.status = "failed"
+        result.error_message = f"No valid evaluation images found for {adapter.dataset_id}."
+        if db is not None:
+            _persist_result(result, db)
+        return result
+
+    result.total_images = len(test_images)
+
+    predictions = []
+    ground_truth = []
+    latencies = []
+    vlm_calls = 0
+
+    for img_record in test_images:
+        try:
+            inference_res = run_classification_inference(
+                image=img_record.path,
+                dataset=adapter.dataset_id,
+                shots=shots,
+                vlm_provider=vlm,
+            )
+            pred_label = inference_res.get("prediction") or "Unknown"
+            true_label = img_record.class_label
+            predictions.append(pred_label)
+            ground_truth.append(true_label)
+            lat_ms = inference_res.get("metadata", {}).get("inference_time_ms", 0.0)
+            latencies.append(lat_ms)
+            vlm_calls += inference_res.get("metadata", {}).get("vlm_calls", 1)
+            result.successful_images += 1
+        except Exception as exc:
+            logger.warning("Classification inference error on %s: %s", img_record.path.name, exc)
+            result.failed_images += 1
+
+    if result.successful_images > 0:
+        metrics = compute_classification_metrics(predictions, ground_truth, adapter.classes)
+        result.accuracy = metrics["accuracy"]
+        result.precision = metrics["precision"]
+        result.recall = metrics["recall"]
+        result.mf1 = metrics["f1"]
+        result.per_class_metrics = metrics["per_class"]
+        result.mean_iou = None  # Strictly null for classification
+        result.total_latency_ms = round(sum(latencies), 2)
+        result.avg_latency_ms = round(result.total_latency_ms / len(latencies), 2) if latencies else 0.0
+        result.total_vlm_calls = vlm_calls
+        result.status = "completed"
+    else:
+        result.status = "failed"
+        result.error_message = "All evaluation images failed during classification inference."
+
+    if db is not None:
+        _persist_result(result, db)
+
+    return result
+
+
+def _run_adapter_detection_benchmark(
+    adapter,
+    shots: int,
+    db=None,
+) -> ExperimentResult:
+    """Execute evaluation for an OBJECT_DETECTION dataset with a registered adapter (e.g. Malaria)."""
+    vlm_model_name = settings.VLM_MODEL or "gemini-2.5-flash"
+    vlm_provider_name = settings.VLM_PROVIDER or "gemini"
+    config = ExperimentConfig(
+        dataset=adapter.dataset_id,
+        shots=shots,
+        iou_threshold=settings.BENCHMARK_IOU_THRESHOLD,
+        max_candidates=settings.MAX_BENCHMARK_CANDIDATES,
+        vlm_model=vlm_model_name,
+        vlm_provider=vlm_provider_name,
+    )
+    result = ExperimentResult(
+        config=config,
+        status="running",
+        task_type=TaskType.OBJECT_DETECTION.value,
+        accuracy=None,
+    )
+
+    if not sam_service.is_model_available():
+        result.status = "not_available"
+        result.error_message = (
+            "SAM model weights unavailable. Set SAM_MODEL_PATH in backend/.env "
+            "to a valid SAM checkpoint file."
+        )
+        logger.warning("Benchmark skipped — SAM unavailable: %s", result.error_message)
+        if db is not None:
+            _persist_result(result, db)
+        return result
+
+    try:
+        vlm = get_vlm_provider(vlm_provider_name)
+    except VLMNotConfiguredError as exc:
+        result.status = "not_available"
+        result.error_message = str(exc)
+        if db is not None:
+            _persist_result(result, db)
+        return result
+
+    # Load support examples
+    support_examples = adapter.get_support_examples(shots) if shots > 0 else []
+    support_paths = {str(ex.image_path) for ex in support_examples}
+
+    # Load test images and annotations
+    all_images = adapter.list_images(limit=30)
+    test_records = []
+    for img in all_images:
+        if str(img.path) in support_paths:
+            continue
+        ann_record = adapter.load_annotations(img.image_id)
+        gt_boxes = [
+            {"label": a["label"], "bbox": a["bbox"]}
+            for a in ann_record.annotations
+            if "bbox" in a and "label" in a
+        ]
+        if gt_boxes:
+            test_records.append((img.path, gt_boxes))
+        if len(test_records) >= 10:
+            break
+
+    if not test_records:
+        result.status = "failed"
+        result.error_message = f"No test records with annotations found for {adapter.dataset_id}."
+        if db is not None:
+            _persist_result(result, db)
+        return result
+
+    result.total_images = len(test_records)
+    class_stats: dict = {}
+
+    for image_path, ground_truth in test_records:
+        img_result = evaluate_single_image(
+            image_path=image_path,
+            ground_truth=ground_truth,
+            config=config,
+            sam=sam_service,
+            vlm=vlm,
+            support_examples=support_examples,
+        )
+        result.image_results.append(img_result)
+        if img_result.status == "success":
+            result.successful_images += 1
+            accumulate_per_class(
+                predictions=img_result.predictions,
+                ground_truth=img_result.ground_truth,
+                matches=img_result.matches,
+                unmatched_preds=img_result.unmatched_preds,
+                unmatched_gts=img_result.unmatched_gts,
+                class_stats=class_stats,
+            )
+        else:
+            result.failed_images += 1
+
+    if result.successful_images > 0:
+        per_class = compute_per_class_metrics(class_stats)
+        result.per_class_metrics = per_class
+        result.mf1 = compute_mf1(per_class)
+        result.precision, result.recall = compute_overall_precision_recall(per_class)
+
+        all_preds = [p for ir in result.image_results if ir.status == "success" for p in ir.predictions]
+        all_gt = [g for ir in result.image_results if ir.status == "success" for g in ir.ground_truth]
+        all_matches = []
+        offset_p, offset_g = 0, 0
+        for ir in result.image_results:
+            if ir.status != "success":
+                continue
+            all_matches += [(pi + offset_p, gi + offset_g) for pi, gi in ir.matches]
+            offset_p += len(ir.predictions)
+            offset_g += len(ir.ground_truth)
+        result.mean_iou = compute_mean_iou(all_preds, all_gt, all_matches, config.iou_threshold)
+
+        latencies = [ir.latency_ms for ir in result.image_results if ir.status == "success"]
+        result.total_latency_ms = round(sum(latencies), 2)
+        result.avg_latency_ms = round(result.total_latency_ms / len(latencies), 2) if latencies else 0.0
+        result.total_vlm_calls = sum(ir.vlm_calls for ir in result.image_results)
+        result.status = "completed"
+    else:
+        result.status = "failed"
+        result.error_message = "All images failed during inference."
+
+    if db is not None:
+        _persist_result(result, db)
+
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Result persistence
 # ---------------------------------------------------------------------------
 
@@ -296,6 +557,8 @@ def _persist_result(result: ExperimentResult, db) -> None:
             dataset=result.config.dataset,
             shots=result.config.shots,
             status=result.status,
+            task_type=result.task_type or ("cell_classification" if result.accuracy is not None else "object_detection"),
+            accuracy=result.accuracy,
             mf1=result.mf1,
             precision=result.precision,
             recall=result.recall,
@@ -405,7 +668,7 @@ Examples:
     parser.add_argument(
         "--all",
         action="store_true",
-        help="Run all 4 × 4 = 16 configurations",
+        help="Run all 4 × 2 = 8 configurations",
     )
     parser.add_argument(
         "--persist",

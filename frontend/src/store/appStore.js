@@ -51,7 +51,7 @@ export const useAppStore = create(
 
       // ─── Benchmark State ───────────────────────────────────────────────────
       benchmark: {
-        selectedShots: ['0-shot', '1-shot', '3-shot', '6-shot'],
+        selectedShots: ['0-shot', '6-shot'],
         selectedDataset: 'all',
       },
 

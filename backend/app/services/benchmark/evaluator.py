@@ -138,6 +138,12 @@ def evaluate_single_image(
     # ── 3. VLM classification per candidate ──────────────────────────────────
     prompt = get_dataset_prompt(config.dataset)
     predictions: List[Dict] = []
+    shots_count = len(support_examples) if support_examples else 0
+    support_ids = [ex.get("id", f"{ex.get('label')}_{i}") for i, ex in enumerate(support_examples)] if support_examples else []
+    logger.debug(
+        "IMAGE %s | SHOT CONFIG: %d | SUPPORT EXAMPLES: %d | SUPPORT IDS: %s",
+        image_id, shots_count, len(support_ids), support_ids,
+    )
 
     for box in candidate_boxes:
         x1, y1, x2, y2 = box

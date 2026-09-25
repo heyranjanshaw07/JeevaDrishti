@@ -6,26 +6,10 @@ const SHOT_STAGES = [
   {
     shot: 0,
     title: '0 SHOT',
-    label: 'Zero-Shot',
+    label: 'Zero-Shot Baseline',
     dots: 0,
     text: 'No examples',
     sub: 'Biomedical text prompt only',
-  },
-  {
-    shot: 1,
-    title: '1 SHOT',
-    label: 'Single-Shot',
-    dots: 1,
-    text: '1 visual exemplar',
-    sub: 'Class reference anchor',
-  },
-  {
-    shot: 3,
-    title: '3 SHOT',
-    label: 'Few-Shot Triad',
-    dots: 3,
-    text: '3 visual exemplars',
-    sub: 'Morphological variance coverage',
   },
   {
     shot: 6,
@@ -38,7 +22,7 @@ const SHOT_STAGES = [
 ]
 
 /**
- * ShotComparisonVisual — Conceptual visual diagram representing 0 → 1 → 3 → 6 progression
+ * ShotComparisonVisual — Conceptual visual diagram representing 0 vs 6 progression
  */
 export default function ShotComparisonVisual({ selectedShot = 0 }) {
   return (
@@ -59,13 +43,14 @@ export default function ShotComparisonVisual({ selectedShot = 0 }) {
             Visual progression of contextual exemplars provided to guide cellular detection.
           </p>
         </div>
-        <span className="text-[10px] font-mono px-2.5 py-1 rounded-md bg-white/[0.03] border border-white/[0.08] text-text-muted self-start sm:self-auto">
-          IN-CONTEXT CONSTELLATION
-        </span>
+        <div className="flex items-center gap-2 text-xs font-mono text-text-muted">
+          <Sparkles size={13} className="text-crimson" />
+          <span>Prompt In-Context Scaling</span>
+        </div>
       </div>
 
       {/* Pipeline Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
         {SHOT_STAGES.map((st, idx) => {
           const isSelected = selectedShot === st.shot
           const isLast = idx === SHOT_STAGES.length - 1

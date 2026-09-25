@@ -30,7 +30,7 @@ class MicroscopyValidator:
     def __init__(
         self,
         max_rectilinear_ratio: float = 0.58,
-        max_quadrant_divergence: float = 12.0,
+        max_quadrant_divergence: float = 28.0,
         text_edge_threshold: float = 15.0,
     ):
         self.max_rectilinear_ratio = max_rectilinear_ratio
@@ -235,7 +235,7 @@ class MicroscopyValidator:
         is_multi_chromatic = (
             (active_hue_bins >= 7)
             or (hue_entropy > 2.65)
-            or (active_hue_bins >= 4 and bg_sat > 0.18 and not is_phase_contrast and quad_divergence > 6.0)
+            or (active_hue_bins >= 4 and bg_sat > 0.35 and not is_phase_contrast and quad_divergence > 6.0)
             or (active_hue_bins >= 5 and not is_brightfield and not is_phase_contrast and bg_brightness > 30.0)
             or (active_hue_bins >= 4 and is_darkfield and bg_sat > 0.15)
         )

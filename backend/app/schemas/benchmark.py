@@ -28,6 +28,12 @@ class BenchmarkItem(BaseModel):
     latency: Optional[float] = None
     vlm_calls: Optional[int] = None
 
+    # Classification-specific metric (null for OBJECT_DETECTION datasets)
+    accuracy: Optional[float] = None
+
+    # Task type for this benchmark record
+    task_type: Optional[str] = None
+
     # Experiment statistics
     image_count: Optional[int] = None
     failed_images: Optional[int] = None
@@ -55,7 +61,7 @@ class BenchmarkSummaryResponse(BaseModel):
 
     status: str = Field("not_evaluated", description="Evaluation status")
     datasets: int = Field(4, description="Number of source datasets")
-    shot_configs: List[int] = Field([0, 1, 3, 6], description="Supported shot configurations")
+    shot_configs: List[int] = Field([0, 6], description="Supported shot configurations")
 
 
 # ── Run endpoint ──────────────────────────────────────────────────────────────
@@ -70,8 +76,8 @@ class BenchmarkRunRequest(BaseModel):
     )
     shots: int = Field(
         ...,
-        description="Few-shot support count: 0, 1, 3, or 6",
-        examples=[0, 1, 3, 6],
+        description="Few-shot support count: 0 or 6",
+        examples=[0, 6],
     )
 
 
@@ -94,4 +100,51 @@ class BenchmarkRunResponse(BaseModel):
     iou_threshold: float
     vlm_model: str
     per_class_metrics: Dict[str, Dict[str, float]] = Field(default_factory=dict)
+    accuracy: Optional[float] = None
+    task_type: Optional[str] = None
     error_message: Optional[str] = None
+
+
+# ── Benchmark Matrix ─────────────────────────────────────────────────────────
+
+class BenchmarkMatrixCell(BaseModel):
+    """
+    Single cell in the Dataset x Shot benchmark matrix.
+    Metrics are task-aware: IoU is null for classification datasets;
+    accuracy is null for detection datasets.
+    """
+
+    dataset: str
+    dataset_display_name: str
+    shots: int
+    task_type: str = "object_detection"
+    status: str = "not_evaluated"
+
+    # Detection & Classification shared metrics
+    mf1: Optional[float] = None          # mF1 for detection, macro F1 for classification
+    precision: Optional[float] = None
+    recall: Optional[float] = None
+
+    # Detection-only metric (null for CELL_CLASSIFICATION datasets)
+    iou: Optional[float] = None
+
+    # Classification-only metric (null for OBJECT_DETECTION datasets)
+    accuracy: Optional[float] = None
+
+    # Shared
+    latency: Optional[float] = None
+    vlm_calls: Optional[int] = None
+    error_message: Optional[str] = None
+
+
+class BenchmarkMatrixResponse(BaseModel):
+    """
+    Full Dataset x Shot evaluation matrix.
+    Returns one BenchmarkMatrixCell per (dataset, shots) combination.
+    """
+
+    cells: List[BenchmarkMatrixCell] = Field(default_factory=list)
+    datasets: List[str] = Field(default_factory=list)
+    shot_configs: List[int] = Field(default_factory=lambda: [0, 6])
+    total_cells: int = 0
+    evaluated_cells: int = 0

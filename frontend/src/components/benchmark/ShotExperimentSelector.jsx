@@ -10,20 +10,6 @@ const SHOT_OPTIONS = [
     detail: 'Evaluates zero-shot biomedical text prompting without prior image exemplars.',
   },
   {
-    shot: 1,
-    label: '1 SHOT',
-    sublabel: 'Single visual exemplar',
-    desc: '1 visual example',
-    detail: 'Supplies a single reference cell exemplar per class to calibrate cross-attention.',
-  },
-  {
-    shot: 3,
-    label: '3 SHOT',
-    sublabel: 'Triad visual calibration',
-    desc: '3 visual examples',
-    detail: 'Three representative exemplars capturing morphological variance within classes.',
-  },
-  {
     shot: 6,
     label: '6 SHOT',
     sublabel: 'Standardized Micro-OD bank',
@@ -33,7 +19,7 @@ const SHOT_OPTIONS = [
 ]
 
 /**
- * ShotExperimentSelector — 4 selectable shot configuration cards
+ * ShotExperimentSelector — 2 selectable shot configuration cards
  */
 export default function ShotExperimentSelector({ selectedShot, onSelectShot }) {
   return (
@@ -47,7 +33,7 @@ export default function ShotExperimentSelector({ selectedShot, onSelectShot }) {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {SHOT_OPTIONS.map((opt) => {
           const isSelected = selectedShot === opt.shot
 

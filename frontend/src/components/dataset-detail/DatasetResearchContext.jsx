@@ -25,12 +25,12 @@ export default function DatasetResearchContext({ dataset }) {
               BENCHMARK PROTOCOL
             </span>
             <div className="text-xs font-mono font-bold text-white">
-              Evaluation configurations: 0 / 1 / 3 / 6 shots
+              Evaluation configurations: 0 / 6 shots
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {['0 SHOT', '1 SHOT', '3 SHOT', '6 SHOT'].map((shot) => (
+            {['0 SHOT', '6 SHOT'].map((shot) => (
               <span
                 key={shot}
                 className="px-2 py-1 rounded bg-white/[0.04] border border-white/[0.08] text-[10px] font-mono text-white/80"

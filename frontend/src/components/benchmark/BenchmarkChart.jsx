@@ -154,7 +154,7 @@ export default function BenchmarkChart({ data = [] }) {
             </div>
 
             <div className="pt-2 flex justify-center items-center gap-2 text-[10px] font-mono text-text-muted">
-              <span>0 / 1 / 3 / 6 SHOT CURVE</span>
+              <span>0 / 6 SHOT COMPARISON</span>
               <span className="text-crimson">●</span>
               <span>AWAITING INFERENCE</span>
             </div>

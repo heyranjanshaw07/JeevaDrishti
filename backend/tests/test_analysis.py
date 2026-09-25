@@ -150,7 +150,7 @@ def test_create_analysis():
         json={
             "file_id": file_id,
             "dataset": "Micro-OD",
-            "shots": 3,
+            "shots": 6,
             "vlm_model": "default",
         },
         headers={"Authorization": f"Bearer {token}"},
@@ -160,7 +160,7 @@ def test_create_analysis():
     assert "analysis_id" in data
     assert data["status"] == "pending"
     assert data["dataset"] == "Micro-OD"
-    assert data["shots"] == 3
+    assert data["shots"] == 6
 
 
 # ─── 8. Invalid Dataset Rejection ────────────────────────────────────────────
@@ -199,16 +199,18 @@ def test_invalid_shots_rejection():
     )
     file_id = upload_res.json()["file_id"]
 
-    response = client.post(
-        "/api/v1/analysis",
-        json={
-            "file_id": file_id,
-            "dataset": "BBBC",
-            "shots": 5,  # Only 0, 1, 3, 6 allowed
-        },
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    assert response.status_code == 422 or response.status_code == 400
+    # Only 0 and 6 are supported; 1, 3, and 5 must be rejected
+    for invalid_shot in [1, 3, 5]:
+        response = client.post(
+            "/api/v1/analysis",
+            json={
+                "file_id": file_id,
+                "dataset": "BBBC",
+                "shots": invalid_shot,
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 422, f"Expected 422 for shots={invalid_shot}"
 
 
 # ─── 10. Get Analysis Status ─────────────────────────────────────────────────
@@ -228,7 +230,7 @@ def test_get_analysis():
         json={
             "file_id": file_id,
             "dataset": "BCCD",
-            "shots": 1,
+            "shots": 0,
         },
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -243,7 +245,7 @@ def test_get_analysis():
     assert data["analysis_id"] == analysis_id
     assert data["status"] == "pending"
     assert data["dataset"] == "BCCD"
-    assert data["shots"] == 1
+    assert data["shots"] == 0
     assert data["completed_at"] is None
 
 
@@ -335,7 +337,7 @@ def test_delete_analysis():
 
     create_res = client.post(
         "/api/v1/analysis",
-        json={"file_id": file_id, "dataset": "BCCD", "shots": 1},
+        json={"file_id": file_id, "dataset": "BCCD", "shots": 6},
         headers={"Authorization": f"Bearer {token}"},
     )
     analysis_id = create_res.json()["analysis_id"]

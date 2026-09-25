@@ -1,8 +1,15 @@
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from fastapi import HTTPException, status
 
-from app.schemas.dataset import DatasetSummary, DatasetClassList, DatasetImageItem
+from app.schemas.dataset import (
+    DatasetSummary,
+    DatasetClassList,
+    DatasetImageItem,
+    DatasetRegistryEntry,
+    DatasetRegistryResponse,
+    DatasetValidationResponse,
+)
 
 DATASET_CATALOG: Dict[str, dict] = {
     "Micro-OD": {
@@ -32,6 +39,11 @@ DATASET_CATALOG: Dict[str, dict] = {
         "source_datasets": ["BBBC", "BCCD", "LIVECell", "NIH-3T3"],
         "source_datasets_count": 4,
         "status": "verified",
+        "task_type": "object_detection",
+        "annotation_type": "Bounding Box (JSONL)",
+        "domain": "General Cell Detection",
+        "dataset_status": "available",
+        "supported_shots": [0, 6],
     },
     "BBBC": {
         "id": "BBBC",
@@ -122,16 +134,25 @@ DATASET_CATALOG: Dict[str, dict] = {
     },
 }
 
-# Case-insensitive map
+from app.services.datasets.registry import DATASET_REGISTRY
+
+# Case-insensitive map including both legacy catalog and adapter registry
 KEY_MAP = {k.lower(): k for k in DATASET_CATALOG.keys()}
+for reg_id in DATASET_REGISTRY.keys():
+    KEY_MAP[reg_id.lower()] = reg_id
+    KEY_MAP[reg_id.replace("_", "-").lower()] = reg_id
+KEY_MAP["micro-od"] = "Micro-OD"
+KEY_MAP["micro_od"] = "Micro-OD"
 
 
 def _resolve_dataset_key(name: str) -> str:
-    key = KEY_MAP.get(name.lower().strip())
+    cleaned = name.lower().strip()
+    key = KEY_MAP.get(cleaned)
     if not key:
+        supported = list(DATASET_CATALOG.keys()) + list(DATASET_REGISTRY.keys())
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Dataset '{name}' not found. Supported: {', '.join(DATASET_CATALOG.keys())}",
+            detail=f"Dataset '{name}' not found. Supported: {', '.join(dict.fromkeys(supported))}",
         )
     return key
 
@@ -144,18 +165,52 @@ def get_all_datasets() -> List[DatasetSummary]:
 def get_dataset(name: str) -> DatasetSummary:
     """Retrieve catalog metadata for a specific dataset."""
     key = _resolve_dataset_key(name)
-    return DatasetSummary(**DATASET_CATALOG[key])
+    if key in DATASET_CATALOG:
+        return DatasetSummary(**DATASET_CATALOG[key])
+    if key in DATASET_REGISTRY:
+        adapter = DATASET_REGISTRY[key]
+        return DatasetSummary(
+            id=adapter.dataset_id,
+            name=adapter.display_name,
+            full_name=adapter.display_name,
+            description=adapter.description,
+            modality=adapter.modality,
+            domain=adapter.domain,
+            task_type=adapter.task_type.value,
+            annotation_type=adapter.annotation_type,
+            classes=adapter.classes,
+            classes_count=len(adapter.classes),
+            supported_shots=adapter.supported_shots,
+            total_images=0,
+            example_images=0,
+            test_images=0,
+            test_boxes=0,
+            source_datasets=[adapter.dataset_id],
+            source_datasets_count=1,
+            status="verified",
+            dataset_status="available",
+        )
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Dataset '{name}' not found.")
 
 
 def get_dataset_classes(name: str) -> DatasetClassList:
     """Retrieve verified cell class categories for a dataset."""
     key = _resolve_dataset_key(name)
-    meta = DATASET_CATALOG[key]
-    return DatasetClassList(
-        dataset=meta["name"],
-        classes=meta["classes"],
-        total_classes=meta["classes_count"],
-    )
+    if key in DATASET_CATALOG:
+        meta = DATASET_CATALOG[key]
+        return DatasetClassList(
+            dataset=meta["name"],
+            classes=meta["classes"],
+            total_classes=meta["classes_count"],
+        )
+    if key in DATASET_REGISTRY:
+        adapter = DATASET_REGISTRY[key]
+        return DatasetClassList(
+            dataset=adapter.display_name,
+            classes=adapter.classes,
+            total_classes=len(adapter.classes),
+        )
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Dataset '{name}' not found.")
 
 
 def get_dataset_images(
@@ -173,6 +228,32 @@ def get_dataset_images(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Split must be either 'test' or 'example'.",
         )
+
+    if key in DATASET_REGISTRY and key not in DATASET_CATALOG:
+        adapter = DATASET_REGISTRY[key]
+        records = adapter.list_images(split=split_normalized)
+        if search:
+            search_lower = search.lower().strip()
+            records = [r for r in records if search_lower in r.path.name.lower()]
+        total = len(records)
+        if page < 1:
+            page = 1
+        if page_size < 1 or page_size > 100:
+            page_size = 20
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_slice = records[start:end]
+        items = [
+            DatasetImageItem(
+                image_id=rec.image_id,
+                dataset=adapter.display_name,
+                split=split_normalized,
+                filename=rec.path.name,
+                size_bytes=rec.path.stat().st_size if rec.path.exists() else 0,
+            )
+            for rec in page_slice
+        ]
+        return items, total
 
     # Locate datasets directory relative to project root
     base_repo_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -228,3 +309,51 @@ def get_dataset_images(
     ]
 
     return items, total
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# Multi-Dataset Registry Functions
+# ─────────────────────────────────────────────────────────────────────────
+
+def get_dataset_registry() -> DatasetRegistryResponse:
+    """
+    Return UI-ready metadata for all 5 registered datasets from the adapter registry.
+    This is the primary endpoint used by the frontend dataset selector.
+    """
+    from app.services.datasets.registry import list_datasets
+
+    raw_entries = list_datasets()
+    entries = [
+        DatasetRegistryEntry(
+            id=e["id"],
+            display_name=e["display_name"],
+            description=e["description"],
+            modality=e["modality"],
+            domain=e["domain"],
+            task_type=e["task_type"],
+            annotation_type=e["annotation_type"],
+            classes=e["classes"],
+            class_count=e["class_count"],
+            supported_shots=e["supported_shots"],
+        )
+        for e in raw_entries
+    ]
+    return DatasetRegistryResponse(datasets=entries, total=len(entries))
+
+
+def validate_dataset_adapter(dataset_id: str) -> DatasetValidationResponse:
+    """
+    Validate a specific dataset by its canonical ID using its adapter.
+    Returns disk validation result without scanning the full dataset.
+    """
+    from app.services.datasets.registry import get_adapter
+
+    adapter = get_adapter(dataset_id)  # raises 404 if not found
+    result = adapter.validate()
+    return DatasetValidationResponse(
+        dataset_id=result.dataset_id,
+        is_valid=result.is_valid,
+        checks=result.checks,
+        errors=result.errors,
+        image_count_estimate=result.image_count_estimate,
+    )

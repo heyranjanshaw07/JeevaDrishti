@@ -15,6 +15,7 @@ from app.services.inference.image_service import (
 from app.services.inference.prompt_service import (
     normalize_class_label,
     get_dataset_prompt,
+    get_classification_prompt,
     load_few_shot_examples,
     SUPPORTED_SHOTS,
     DATASET_CLASSES,
@@ -23,10 +24,17 @@ from app.services.inference.sam_service import sam_service, AIModelUnavailableEr
 from app.services.inference.vlm_service import (
     get_vlm_provider,
     VLMProvider,
+    MockVLMProvider,
     VLMNotConfiguredError,
 )
 
-SUPPORTED_DATASETS = list(DATASET_CLASSES.keys())
+# All canonical dataset IDs from the adapter registry
+from app.services.datasets.registry import DATASET_REGISTRY, get_adapter_safe
+from app.services.datasets.base import TaskType
+
+SUPPORTED_DATASETS = list(DATASET_CLASSES.keys()) + [
+    did for did in DATASET_REGISTRY.keys() if did not in DATASET_CLASSES
+]
 
 
 class HybridInferenceError(Exception):
@@ -62,6 +70,18 @@ def run_hybrid_inference(
         raise HybridInferenceError(
             f"Invalid shot configuration '{shots}'. Supported: {SUPPORTED_SHOTS}",
             code="INVALID_SHOT_CONFIGURATION",
+        )
+
+    # 1b. Task-type routing: classification datasets skip SAM
+    adapter = get_adapter_safe(dataset)
+    if adapter is not None and adapter.task_type == TaskType.CELL_CLASSIFICATION:
+        return run_classification_inference(
+            image=image,
+            dataset=dataset,
+            shots=shots,
+            model=model,
+            vlm_provider=vlm_provider,
+            analysis_id=analysis_id,
         )
 
     # 2. Image loading and validation
@@ -109,11 +129,17 @@ def run_hybrid_inference(
         }
 
     # 4. Object proposal generation via SAM
-    sam = sam_provider or sam_service
     max_candidates = settings.MAX_LIVE_CANDIDATES or 15
 
     try:
-        candidate_boxes = sam.generate_proposals(pil_image, max_candidates=max_candidates)
+        if sam_provider is not None:
+            candidate_boxes = sam_provider.generate_proposals(pil_image, max_candidates=max_candidates)
+        elif sam_service.is_model_available():
+            candidate_boxes = sam_service.generate_proposals(pil_image, max_candidates=max_candidates)
+        elif model in ("optical", "mock", "optical-vlm") or isinstance(vlm_provider, MockVLMProvider):
+            candidate_boxes = sam_service.generate_optical_proposals(pil_image, max_candidates=max_candidates)
+        else:
+            candidate_boxes = sam_service.generate_proposals(pil_image, max_candidates=max_candidates)
     except AIModelUnavailableError:
         raise
     except Exception as e:
@@ -178,7 +204,7 @@ def run_hybrid_inference(
                 prompt=prompt,
                 few_shot_examples=few_shot_examples,
             )
-            canonical_label = normalize_class_label(raw_label)
+            canonical_label = normalize_class_label(raw_label, dataset=dataset)
             if canonical_label is not None and canonical_label != "NOT_A_CELL":
                 box_list = [int(x1), int(y1), int(x2), int(y2)]
                 detections.append({
@@ -289,6 +315,7 @@ def run_hybrid_inference(
         "metadata": {
             "dataset": dataset,
             "shots": shots,
+            "task_type": TaskType.OBJECT_DETECTION.value,
             "vlm_model": getattr(vlm, "model_name", model or "default"),
             "proposals_evaluated": len(candidate_boxes),
             "vlm_calls": vlm_calls_count,
@@ -299,5 +326,170 @@ def run_hybrid_inference(
             "recall": None,
             "mAP50": None,
             "image_dimensions": [w, h],
+        },
+    }
+
+
+def run_classification_inference(
+    image: Union[Path, str, bytes, Image.Image],
+    dataset: str,
+    shots: int = 0,
+    model: Optional[str] = None,
+    vlm_provider: Optional[VLMProvider] = None,
+    analysis_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Whole-image cell classification pipeline for CELL_CLASSIFICATION datasets.
+    Skips SAM entirely. Passes the full image (or cropped cell image) to the VLM
+    along with the dataset-specific classification prompt.
+
+    Valid datasets: c_nmc_2019, redtell_anemia, sipakmed.
+    DO NOT call this for OBJECT_DETECTION datasets.
+
+    Metrics: accuracy, precision, recall, f1, latency.
+    IoU is NOT computed and must remain null in all benchmark records.
+    """
+    import time
+
+    start_time = time.perf_counter()
+
+    # Resolve adapter and classes
+    adapter = get_adapter_safe(dataset)
+    if adapter is None:
+        raise HybridInferenceError(
+            f"No adapter registered for classification dataset '{dataset}'",
+            code="UNSUPPORTED_DATASET",
+        )
+
+    classes = adapter.classes
+    prompt = get_classification_prompt(dataset, classes)
+
+    # Load and validate image
+    try:
+        pil_image = load_image(image)
+        w, h = validate_image_dimensions(pil_image)
+    except Exception as e:
+        raise HybridInferenceError(f"Image processing failure: {str(e)}", code="INVALID_IMAGE")
+
+    # Microscopy domain validation
+    from app.services.inference.microscopy_validator import microscopy_validator
+    validation = microscopy_validator.validate(pil_image)
+    if not validation.is_valid:
+        elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        return {
+            "status": "rejected",
+            "reason": validation.reason or "non_microscopy_image",
+            "message": validation.message or "The uploaded image does not appear to be a microscopy image.",
+            "detections": [],
+            "boxes": [],
+            "metrics": None,
+            "prediction": "Non-Microscopy Image",
+            "confidence": None,
+            "indicators": [],
+            "explanation": validation.message,
+            "overlay": None,
+            "metadata": {
+                "dataset": dataset,
+                "shots": shots,
+                "task_type": TaskType.CELL_CLASSIFICATION.value,
+                "inference_time_ms": elapsed_ms,
+                "vlm_calls": 0,
+                "image_dimensions": [w, h],
+                "validation": validation.details,
+                "iou": None,  # Always null for classification
+            },
+        }
+
+    # Load few-shot support examples (for 6-shot: include in prompt context)
+    support_examples = []
+    if shots > 0:
+        try:
+            support_examples = adapter.get_support_examples(shots)
+        except Exception as exc:
+            logger.warning("Support example loading failed for %s: %s", dataset, exc)
+
+    # VLM whole-image classification
+    vlm = vlm_provider or get_vlm_provider(model)
+    try:
+        img_b64 = image_to_base64(pil_image, format="JPEG")
+        # Build few-shot exemplar list for VLM call
+        few_shot = []
+        for ex in support_examples:
+            try:
+                ex_img = Image.open(ex.image_path).convert("RGB")
+                ex_b64 = image_to_base64(ex_img, format="JPEG")
+                few_shot.append({
+                    "id": ex.example_id,
+                    "label": ex.class_label,
+                    "patch_b64": ex_b64,
+                })
+            except Exception:
+                continue
+
+        raw_label, confidence = vlm.classify_patch(
+            patch_b64=img_b64,
+            prompt=prompt,
+            few_shot_examples=few_shot,
+        )
+    except (VLMNotConfiguredError, AIModelUnavailableError):
+        raise
+    except Exception as e:
+        raise HybridInferenceError(
+            f"VLM classification failed for {dataset}: {str(e)}",
+            code="VLM_FAILURE",
+        )
+
+    elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+
+    # Normalize predicted label against known classes
+    raw_stripped = (raw_label or "").strip()
+    # Match against known class list (case-insensitive)
+    predicted_class = next(
+        (c for c in classes if c.lower() == raw_stripped.lower()),
+        None,
+    )
+    # Fallback: partial match
+    if predicted_class is None:
+        predicted_class = next(
+            (c for c in classes if c.lower() in raw_stripped.lower() or raw_stripped.lower() in c.lower()),
+            raw_stripped or "Unknown",
+        )
+
+    conf_float = float(confidence) if confidence is not None else 0.0
+
+    indicators = [f"Predicted class: {predicted_class} (confidence: {round(conf_float * 100, 1)}%)"]
+    explanation = (
+        f"Whole-image cell classification result: {predicted_class} "
+        f"(confidence: {round(conf_float * 100, 1)}%). "
+        f"Dataset: {adapter.display_name}. "
+        f"JeevaDrishti does not replace laboratory results. "
+        f"Always validate with a qualified pathologist."
+    )
+
+    return {
+        "status": "completed",
+        "prediction": predicted_class,
+        "confidence": conf_float,
+        "indicators": indicators,
+        "explanation": explanation,
+        "boxes": [],            # No bounding boxes for classification
+        "detections": [{"label": predicted_class, "confidence": conf_float}],
+        "overlay": None,        # No overlay for whole-image classification
+        "metadata": {
+            "dataset": dataset,
+            "shots": shots,
+            "task_type": TaskType.CELL_CLASSIFICATION.value,
+            "vlm_model": getattr(vlm, "model_name", model or "default"),
+            "proposals_evaluated": 0,   # SAM not used
+            "vlm_calls": 1,
+            "inference_time_ms": elapsed_ms,
+            "detections_count": 1,
+            "avg_confidence": conf_float,
+            "precision": None,   # Computed at benchmark level, not per-image
+            "recall": None,
+            "mAP50": None,
+            "iou": None,         # NEVER compute IoU for classification datasets
+            "image_dimensions": [w, h],
+            "classes": classes,
         },
     }

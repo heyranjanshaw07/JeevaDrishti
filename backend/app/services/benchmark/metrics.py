@@ -24,7 +24,7 @@ of the evaluated experiment. For each class c:
 If no classes appear in the ground truth, mF1 = 0.0.
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 # ---------------------------------------------------------------------------
@@ -245,3 +245,66 @@ def compute_mean_iou(
         for pi, gi in matches
     ]
     return round(sum(ious) / len(ious), 6)
+ 
+# ---------------------------------------------------------------------------
+# Classification Metrics
+# ---------------------------------------------------------------------------
+
+def compute_classification_metrics(
+    predictions: List[str],
+    ground_truth: List[str],
+    classes: List[str],
+) -> Dict[str, Any]:
+    """
+    Compute Accuracy, per-class Precision/Recall/F1, and macro metrics for classification tasks.
+    IoU is NEVER computed here and is not returned (must remain null).
+    """
+    total = len(ground_truth)
+    if total == 0:
+        return {
+            "accuracy": 0.0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "per_class": {},
+        }
+
+    correct = sum(1 for p, g in zip(predictions, ground_truth) if p == g)
+    accuracy = round(correct / total, 6)
+
+    per_class: Dict[str, Dict[str, Any]] = {}
+    for cls in classes:
+        tp = sum(1 for p, g in zip(predictions, ground_truth) if p == cls and g == cls)
+        fp = sum(1 for p, g in zip(predictions, ground_truth) if p == cls and g != cls)
+        fn = sum(1 for p, g in zip(predictions, ground_truth) if p != cls and g == cls)
+
+        prec = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        rec = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        f1 = (2 * prec * rec / (prec + rec)) if (prec + rec) > 0 else 0.0
+
+        per_class[cls] = {
+            "precision": round(prec, 6),
+            "recall": round(rec, 6),
+            "f1": round(f1, 6),
+            "tp": tp,
+            "fp": fp,
+            "fn": fn,
+        }
+
+    # Macro averages across classes that appear in ground truth
+    present_classes = [cls for cls in classes if any(g == cls for g in ground_truth)]
+    if present_classes:
+        macro_prec = round(sum(per_class[c]["precision"] for c in present_classes) / len(present_classes), 6)
+        macro_rec = round(sum(per_class[c]["recall"] for c in present_classes) / len(present_classes), 6)
+        macro_f1 = round(sum(per_class[c]["f1"] for c in present_classes) / len(present_classes), 6)
+    else:
+        macro_prec, macro_rec, macro_f1 = 0.0, 0.0, 0.0
+
+    return {
+        "accuracy": accuracy,
+        "precision": macro_prec,
+        "recall": macro_rec,
+        "f1": macro_f1,
+        "per_class": per_class,
+    }
+

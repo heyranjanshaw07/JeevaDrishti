@@ -10,18 +10,6 @@ const SHOT_CONFIGS = [
     desc: 'Unsupervised open-vocabulary visual-semantic discovery',
   },
   {
-    id: '1-shot',
-    label: '1 SHOT',
-    name: '1-Shot Exemplar',
-    desc: 'Single curated specimen prompt alignment',
-  },
-  {
-    id: '3-shot',
-    label: '3 SHOT',
-    name: '3-Shot Bank',
-    desc: 'Triad morphological reference calibration',
-  },
-  {
     id: '6-shot',
     label: '6 SHOT',
     name: '6-Shot Bank',
@@ -38,7 +26,7 @@ const SHOT_CONFIGS = [
 export default function FewShotComparison({
   selectedShot = '6-shot',
   onSelectShot,
-  shotMetrics = null, // { '0-shot': ..., '1-shot': ... }
+  shotMetrics = null, // { '0-shot': ..., '6-shot': ... }
 }) {
   // Normalize selected string (e.g. '6 Shot' -> '6-shot')
   const normalizedSelected = selectedShot.toLowerCase().replace(' ', '-')
@@ -58,8 +46,8 @@ export default function FewShotComparison({
         </span>
       </div>
 
-      {/* 4 Selectable Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* 2 Selectable Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         {SHOT_CONFIGS.map((config) => {
           const isSelected = normalizedSelected === config.id
           const metric = shotMetrics?.[config.id]
@@ -68,7 +56,7 @@ export default function FewShotComparison({
           return (
             <div
               key={config.id}
-              onClick={() => onSelectShot && onSelectShot(config.id === '0-shot' ? '0 Shot' : config.id === '1-shot' ? '1 Shot' : config.id === '3-shot' ? '3 Shot' : '6 Shot')}
+              onClick={() => onSelectShot && onSelectShot(config.id === '0-shot' ? '0 Shot' : '6 Shot')}
               className="cursor-pointer"
             >
               <GlassCard

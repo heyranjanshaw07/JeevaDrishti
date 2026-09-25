@@ -270,3 +270,16 @@ def test_logout_endpoint():
     response = client.post("/api/v1/auth/logout")
     assert response.status_code == 200
     assert response.json()["message"] == "Successfully logged out"
+
+
+# ─── 12. Demo Credentials Endpoint ──────────────────────────────────────────
+def test_demo_credentials_endpoint():
+    response = client.get("/api/v1/auth/demo")
+    assert response.status_code == 200
+    data = response.json()
+    assert "login" in data
+    assert "signup" in data
+    assert data["login"]["email"] == "dr.sharma@aiims.edu"
+    assert "password" in data["login"]
+    assert "name" in data["signup"]
+    assert "email" in data["signup"]

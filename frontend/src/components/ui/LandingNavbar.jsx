@@ -99,7 +99,7 @@ export default function LandingNavbar() {
               </Link>
             )}
 
-            <Link to={isAuthenticated ? "/analyze" : "/login"}>
+            <Link to={isAuthenticated ? "/analyze" : "/iris"}>
               <Button variant="primary" size="sm" iconRight={ArrowRight}>
                 Get Started
               </Button>
@@ -108,7 +108,7 @@ export default function LandingNavbar() {
 
           {/* ─── Mobile Hamburger Toggle ─────────────────────────────────── */}
           <div className="sm:hidden flex items-center gap-2">
-            <Link to={isAuthenticated ? "/analyze" : "/login"}>
+            <Link to={isAuthenticated ? "/analyze" : "/iris"}>
               <Button variant="primary" size="sm">
                 Start
               </Button>
@@ -158,7 +158,7 @@ export default function LandingNavbar() {
                     </Button>
                   </Link>
                 )}
-                <Link to={isAuthenticated ? "/analyze" : "/login"} className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                <Link to={isAuthenticated ? "/analyze" : "/iris"} className="flex-1" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="primary" size="sm" className="w-full" iconRight={ArrowRight}>
                     Get Started
                   </Button>

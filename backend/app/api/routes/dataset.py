@@ -5,15 +5,35 @@ from app.schemas.dataset import (
     DatasetSummary,
     DatasetClassList,
     DatasetImageListResponse,
+    DatasetRegistryResponse,
+    DatasetRegistryEntry,
+    DatasetValidationResponse,
 )
 from app.services.dataset_service import (
     get_all_datasets,
     get_dataset,
     get_dataset_classes,
     get_dataset_images,
+    get_dataset_registry,
+    validate_dataset_adapter,
 )
 
 router = APIRouter(prefix="/datasets", tags=["Dataset Explorer"])
+
+
+@router.get(
+    "/registry",
+    response_model=DatasetRegistryResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get dataset registry",
+    description=(
+        "Returns the full dataset registry with task type, annotation format, "
+        "class lists, and shot configurations for all 5 supported datasets."
+    ),
+)
+def list_dataset_registry() -> DatasetRegistryResponse:
+    return get_dataset_registry()
+
 
 
 @router.get(
@@ -76,3 +96,18 @@ def retrieve_dataset_images(
         page_size=page_size,
         total=total,
     )
+
+
+@router.get(
+    "/{dataset_id}/validate",
+    response_model=DatasetValidationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Validate dataset on disk",
+    description=(
+        "Validates that the specified dataset is present and well-formed on disk. "
+        "Checks expected directory structure and confirms images are discoverable. "
+        "Lightweight check — does not scan the full dataset."
+    ),
+)
+def validate_dataset(dataset_id: str) -> DatasetValidationResponse:
+    return validate_dataset_adapter(dataset_id)

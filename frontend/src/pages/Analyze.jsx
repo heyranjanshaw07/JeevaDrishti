@@ -36,7 +36,7 @@ export default function Analyze() {
   }, [])
 
   // Workbench Form State
-  const [selectedDataset, setSelectedDataset] = useState('Micro-OD')
+  const [selectedDataset, setSelectedDataset] = useState('micro_od')
   const [selectedShotMode, setSelectedShotMode] = useState('6 Shot')
   const [selectedModel, setSelectedModel] = useState('optical')
   const [selectedFile, setSelectedFile] = useState(null)
@@ -63,7 +63,7 @@ export default function Analyze() {
 
   // Map display shot strings → backend integer
   const shotModeToInt = (mode) => {
-    const map = { '0 Shot': 0, '1 Shot': 1, '3 Shot': 3, '6 Shot': 6 }
+    const map = { '0 Shot': 0, '6 Shot': 6 }
     return map[mode] ?? 0
   }
 

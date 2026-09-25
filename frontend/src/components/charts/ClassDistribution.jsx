@@ -2,8 +2,6 @@ import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 
 const SHOT_COLORS = {
   '0-shot': '#64748b',
-  '1-shot': '#FFA0B4',
-  '3-shot': '#FFFFFF',
   '6-shot': '#FF2A55',
 }
 
