@@ -1,10 +1,16 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional, Any
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
 from app.models.analysis import Analysis, UploadedFile
-from app.schemas.analysis import AnalysisCreate, SUPPORTED_DATASETS, SUPPORTED_SHOTS
+from app.schemas.analysis import (
+    AnalysisCreate,
+    AnalysisResultsResponse,
+    DetectionItem,
+    SUPPORTED_DATASETS,
+    SUPPORTED_SHOTS,
+)
 from app.services.storage_service import delete_uploaded_file
 
 
