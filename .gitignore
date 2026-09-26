@@ -31,20 +31,22 @@ reports/
 *.log
 
 # Large Datasets & Benchmark Imagery
-datasets/
-Micro-OD/
+/datasets/
+/Micro-OD/
 /data/
-!frontend/src/data/**
-dataset/
-sampled_dataset/
+/dataset/
+/sampled_dataset/
 *.zip
 *.tar
 *.tar.gz
 *.npz
-**/images/
-**/temp_data/
-**/overlays/
-**/plots/
+# Only ignore images/ temp_data/ overlays/ plots/ at root level (not inside frontend/src)
+/images/
+/temp_data/
+/overlays/
+/plots/
+# Never ignore frontend source files
+!frontend/src/**
 
 # Python & Virtual Environments
 __pycache__/
