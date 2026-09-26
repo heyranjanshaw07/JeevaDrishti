@@ -1,0 +1,48 @@
+services:
+  # ==============================================================================
+  # JeevaDrishti FastAPI Backend Service
+  # ==============================================================================
+  - type: web
+    name: jeevadrishti-backend
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: API_V1_PREFIX
+        value: /api/v1
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jeevadrishti-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "http://localhost:5173"
+      - key: VLM_PROVIDER
+        value: gemini
+      - key: VLM_MODEL
+        value: gemini-2.5-flash
+      - key: GOOGLE_API_KEY
+        sync: false
+
+# ==============================================================================
+# Managed PostgreSQL Database Service (Free Tier)
+# ==============================================================================
+databases:
+  - name: jeevadrishti-db
+    plan: free
+    region: oregon
+    databaseName: jeevadrishti
+    user: jeevauser
