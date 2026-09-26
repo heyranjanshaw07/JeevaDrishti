@@ -4,7 +4,7 @@ services:
   # ==============================================================================
   - type: web
     name: jeevadrishti-backend
-    runtime: python
+    env: python
     region: oregon
     plan: free
     rootDir: backend
