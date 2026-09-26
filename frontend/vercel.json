@@ -3,6 +3,7 @@
   "framework": "vite",
   "installCommand": "npm install --legacy-peer-deps --foreground-scripts",
   "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/(.*)",
