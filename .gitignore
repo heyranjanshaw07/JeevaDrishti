@@ -81,10 +81,11 @@ coverage/
 *.onnx
 *.safetensors
 *.ckpt
-models/
-checkpoints/
-huggingface/
+/models/
+/checkpoints/
+/huggingface/
 .cache/
+!backend/app/models/**
 
 # IDE, OS & Temporary Files
 .vscode/
