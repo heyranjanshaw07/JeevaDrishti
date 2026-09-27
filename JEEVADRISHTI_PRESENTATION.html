@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JeevaDrishti - Empowering Microscopy with Intelligent Vision</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --crimson:#E11D48;--crimson-b:#FF2A55;--cg:rgba(225,29,72,.35);
+  --em:#10B981;--sky:#38BDF8;--pur:#8B5CF6;--amb:#F59E0B;
+  --bg:#060205;--s:rgba(255,255,255,.04);--s2:rgba(255,255,255,.07);
+  --bd:rgba(255,255,255,.09);--br:rgba(225,29,72,.3);
+  --tm:rgba(255,255,255,.55);--td:rgba(255,255,255,.35);
+  --fh:'Space Grotesk',sans-serif;--fb:'Inter',sans-serif;--fm:'JetBrains Mono',monospace;
+  --sw:1280px;--sh:720px;
+}
+html,body{width:100%;background:#0d0d0d;font-family:var(--fb);color:#fff;overflow-x:hidden;}
+/* === SLIDE ENGINE === */
+.deck{width:100%;padding:40px 0 60px;}
+.slide{
+  width:var(--sw);height:var(--sh);margin:32px auto;
+  background:var(--bg);position:relative;overflow:hidden;
+  border:1px solid var(--bd);border-radius:12px;
+  box-shadow:0 24px 80px rgba(0,0,0,.8),0 0 0 1px rgba(225,29,72,.06);
+  display:flex;flex-direction:column;
+}
+.snum{position:absolute;bottom:18px;right:28px;font-size:11px;font-family:var(--fm);color:var(--td);letter-spacing:.12em;z-index:100;}
+.slabel{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,.22);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;}
+/* GLOWS */
+.gr{position:absolute;border-radius:50%;background:radial-gradient(ellipse,var(--cg) 0%,transparent 70%);pointer-events:none;}
+.ge{position:absolute;border-radius:50%;background:radial-gradient(ellipse,rgba(16,185,129,.18) 0%,transparent 70%);pointer-events:none;}
+.gp{position:absolute;border-radius:50%;background:radial-gradient(ellipse,rgba(139,92,246,.18) 0%,transparent 70%);pointer-events:none;}
+/* GRID */
+.grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:60px 60px;}
+/* PILL */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 14px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;}
+.pr{background:rgba(225,29,72,.15);border:1px solid rgba(225,29,72,.35);color:#FF6B88;}
+.pe{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#34D399;}
+.ps{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.28);color:#7DD3FC;}
+.pp{background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3);color:#A78BFA;}
+.pa{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.28);color:#FCD34D;}
+/* HEADER */
+.sh{display:flex;align-items:center;gap:14px;margin-bottom:22px;}
+.sh h2{font-family:var(--fh);font-size:26px;font-weight:700;letter-spacing:-.02em;}
+.hl{flex:1;height:1px;background:linear-gradient(90deg,var(--br),transparent);}
+/* CARD */
+.card{background:var(--s);border:1px solid var(--bd);border-radius:10px;padding:16px 20px;}
+/* ICON CIRCLE */
+.ic{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px;}
+.ir{background:rgba(225,29,72,.15);border:1px solid rgba(225,29,72,.3);}
+.ie{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.28);}
+.is{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.26);}
+.ip{background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.28);}
+/* ANIMATIONS */
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes pulse-ring{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.5);opacity:0}}
+@keyframes cdrift{0%{transform:translate(0,0) scale(1);opacity:.5}50%{transform:translate(20px,-15px) scale(1.05);opacity:.8}100%{transform:translate(0,0) scale(1);opacity:.5}}
+.fc{position:absolute;border-radius:50%;border:1px solid;animation:cdrift ease-in-out infinite;}
+/* TOP BAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 64px;border-bottom:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02);flex-shrink:0;}
+.bm{display:flex;align-items:center;gap:10px;}
+.bmd{width:10px;height:10px;border-radius:50%;background:var(--crimson-b);}
+.bmn{font-family:var(--fh);font-size:15px;font-weight:700;}
+.bmn span{color:var(--crimson-b);}
+/* BBAR */
+.bbar{position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--crimson),rgba(139,92,246,.6),transparent);}
+/* ====== SLIDE 1 ====== */
+#s1{background:linear-gradient(135deg,#060205 0%,#0A0408 40%,#12060E 100%);}
+#s1 .hbg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 75% 50%,rgba(225,29,72,.13) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 15% 20%,rgba(139,92,246,.09) 0%,transparent 60%),radial-gradient(ellipse 30% 40% at 85% 80%,rgba(16,185,129,.07) 0%,transparent 60%);}
+#s1 .cnt{position:relative;z-index:10;flex:1;display:flex;align-items:center;padding:0 90px;}
+#s1 .lft{max-width:680px;}
+#s1 .eb{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+#s1 .eb span{font-family:var(--fm);font-size:11px;color:var(--crimson-b);letter-spacing:.2em;text-transform:uppercase;}
+#s1 .dot{width:4px;height:4px;border-radius:50%;background:var(--crimson-b);}
+#s1 h1{font-family:var(--fh);font-size:58px;font-weight:700;line-height:1.05;letter-spacing:-.03em;margin-bottom:14px;background:linear-gradient(135deg,#fff 0%,rgba(255,255,255,.75) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+#s1 h1 span{background:linear-gradient(135deg,var(--crimson-b),#FF6B88);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+#s1 .tb{display:flex;flex-direction:column;gap:10px;padding:18px 22px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
+#s1 .tl{font-size:10px;color:var(--crimson-b);letter-spacing:.18em;text-transform:uppercase;margin-bottom:4px;}
+/* ====== SLIDE 2 ====== */
+#s2{background:linear-gradient(135deg,#060205,#090308);}
+#s2 .main{flex:1;display:flex;flex-direction:column;padding:40px 64px 24px;}
+.pgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;margin-top:18px;}
+.pc{border-radius:10px;padding:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;}
+.pc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--crimson),rgba(225,29,72,.2));}
+.pi{font-size:26px;margin-bottom:2px;}
+.pstat{font-family:var(--fm);font-size:20px;font-weight:700;color:var(--crimson-b);}
+.pt{font-family:var(--fh);font-size:13px;font-weight:600;}
+.pd{font-size:11px;color:rgba(255,255,255,.5);line-height:1.5;}
+.pflow{display:flex;align-items:center;margin-top:14px;}
+.pf{flex:1;text-align:center;padding:9px 6px;background:rgba(225,29,72,.06);border:1px solid rgba(225,29,72,.15);font-size:11px;color:rgba(255,255,255,.6);font-weight:500;line-height:1.3;}
+.pf:first-child{border-radius:8px 0 0 8px;}
+.pf:last-child{border-radius:0 8px 8px 0;}
+.pa2{color:var(--crimson);font-size:14px;padding:0 3px;flex-shrink:0;}
+/* ====== SLIDE 3 ====== */
+#s3{background:linear-gradient(135deg,#060205,#060A0F);}
+#s3 .main{flex:1;display:flex;gap:28px;padding:38px 60px 32px;}
+#s3 .lc{flex:1;display:flex;flex-direction:column;gap:12px;}
+#s3 .rc{width:400px;display:flex;flex-direction:column;gap:12px;}
+.pw{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:5px;}
+.ps2{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:7px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);}
+.ps2.hi{background:rgba(225,29,72,.1);border-color:rgba(225,29,72,.25);}
+.ps2.se{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.2);}
+.ps2.pr2{background:rgba(225,29,72,.1);border-color:rgba(225,29,72,.3);}
+.pico{font-size:15px;width:26px;text-align:center;flex-shrink:0;}
+.plb{font-size:12px;font-weight:500;color:rgba(255,255,255,.8);}
+.psb{font-size:10px;color:rgba(255,255,255,.4);margin-top:1px;}
+.pcon{width:2px;height:7px;background:var(--br);margin-left:22px;}
+.uc{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:9px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
+.ut h4{font-size:12px;font-weight:600;margin-bottom:3px;}
+.ut p{font-size:11px;color:rgba(255,255,255,.5);line-height:1.5;}
+.sc{display:flex;gap:10px;}
+.sb{flex:1;padding:12px;border-radius:8px;text-align:center;background:rgba(225,29,72,.08);border:1px solid rgba(225,29,72,.3);}
+.sn{font-family:var(--fh);font-size:28px;font-weight:700;color:var(--crimson-b);}
+.sl2{font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.1em;}
+.sd{font-size:11px;color:rgba(255,255,255,.45);margin-top:6px;line-height:1.4;}
+/* ====== SLIDE 4 ====== */
+#s4{background:linear-gradient(135deg,#060205,#07070D);}
+#s4 .main{flex:1;display:flex;flex-direction:column;padding:36px 64px 28px;}
+.tcat{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;flex:1;}
+.tc{border-radius:10px;padding:14px 16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:8px;}
+.tct{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;}
+.tct.r{color:var(--crimson-b);}
+.tct.e{color:#34D399;}
+.tct.s{color:#7DD3FC;}
+.tct.a{color:#FCD34D;}
+.tct.p{color:#A78BFA;}
+.tct.o{color:#FB923C;}
+.ti{display:flex;flex-wrap:wrap;gap:6px;}
+.tt{display:flex;align-items:center;gap:6px;padding:5px 9px;border-radius:6px;font-size:11px;font-weight:500;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.8);}
+/* ====== SLIDE 5 ====== */
+#s5{background:linear-gradient(135deg,#060205,#060A08);}
+#s5 .main{flex:1;display:flex;gap:24px;padding:34px 58px 28px;}
+.ww{flex:1;display:flex;flex-direction:column;gap:0;}
+.wn{display:flex;align-items:center;gap:10px;padding:8px 12px;margin:2px 0;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
+.wn.wp{background:rgba(225,29,72,.1);border-color:rgba(225,29,72,.3);}
+.wn.ws{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.2);}
+.wn.wh{background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.25);}
+.wi{font-size:17px;width:28px;text-align:center;flex-shrink:0;}
+.wt h4{font-size:11px;font-weight:600;}
+.wt p{font-size:10px;color:rgba(255,255,255,.45);line-height:1.3;}
+.war{text-align:center;color:rgba(225,29,72,.4);font-size:12px;padding:2px 0;display:flex;align-items:center;justify-content:center;}
+.winfo{width:290px;display:flex;flex-direction:column;gap:10px;}
+.wic{padding:13px 15px;border-radius:9px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
+.wic h4{font-size:11px;font-weight:700;color:var(--crimson-b);margin-bottom:7px;text-transform:uppercase;letter-spacing:.08em;}
+/* ====== SLIDE 6 ====== */
+#s6{background:linear-gradient(135deg,#060205,#08060D);}
+#s6 .main{flex:1;display:flex;flex-direction:column;padding:34px 58px 24px;}
+.bmcg{display:grid;grid-template-columns:1.2fr 1.6fr 1.2fr;grid-template-rows:1fr 1fr;gap:11px;flex:1;margin-top:14px;}
+.bmcc{border-radius:9px;padding:13px 15px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:5px;}
+.bmcc.ct{grid-column:2;border-color:rgba(225,29,72,.25);background:rgba(225,29,72,.07);}
+.bmcc.cb{grid-column:2;border-color:rgba(16,185,129,.2);background:rgba(16,185,129,.05);}
+.bctt{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--crimson-b);}
+.bctt.e{color:#34D399;}.bctt.s{color:#7DD3FC;}.bctt.a{color:#FCD34D;}.bctt.p{color:#A78BFA;}
+.bi{display:flex;align-items:flex-start;gap:7px;font-size:11px;color:rgba(255,255,255,.65);line-height:1.4;}
+.bi::before{content:'→';color:var(--crimson);flex-shrink:0;margin-top:1px;}
+/* ====== SLIDE 7 ====== */
+#s7{background:linear-gradient(135deg,#060205 0%,#0A0408 50%,#060205 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+#s7 .hbg{position:absolute;inset:0;background:radial-gradient(ellipse 50% 60% at 50% 40%,rgba(225,29,72,.14) 0%,transparent 70%),radial-gradient(ellipse 30% 40% at 20% 80%,rgba(139,92,246,.08) 0%,transparent 60%);}
+#s7 .cnt7{position:relative;z-index:10;text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px;}
+.qar{width:150px;height:150px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid rgba(225,29,72,.3);position:relative;background:rgba(225,29,72,.08);}
+.qar::before{content:'';position:absolute;inset:-10px;border-radius:50%;border:1px solid rgba(225,29,72,.15);animation:pulse-ring 2.5s ease-out infinite;}
+.qar::after{content:'';position:absolute;inset:-22px;border-radius:50%;border:1px solid rgba(225,29,72,.07);animation:pulse-ring 2.5s ease-out .8s infinite;}
+.qat{font-family:var(--fh);font-size:52px;font-weight:700;color:var(--crimson-b);}
+.bn{font-family:var(--fh);font-size:34px;font-weight:700;background:linear-gradient(135deg,#fff,rgba(255,255,255,.7));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.bn span{background:linear-gradient(135deg,var(--crimson-b),#FF8C9E);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.cc{padding:4px 12px;border-radius:999px;font-size:11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);}
+.cc.ld{background:rgba(225,29,72,.12);border-color:rgba(225,29,72,.3);color:#FF8C9E;}
+/* === NAV === */
+.navb{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:rgba(10,4,8,.88);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:10px 20px;backdrop-filter:blur(12px);z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.5);}
+.nb{padding:7px 16px;border-radius:999px;border:none;cursor:pointer;font-family:var(--fb);font-size:12px;font-weight:600;background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);transition:all .2s;}
+.nb:hover{background:rgba(225,29,72,.2);color:#fff;}
+.ndw{display:flex;gap:6px;align-items:center;margin:0 4px;}
+.nd{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.2);cursor:pointer;transition:all .2s;}
+.nd.act{background:var(--crimson-b);transform:scale(1.2);}
+.smi{font-family:var(--fm);font-size:10px;color:rgba(255,255,255,.3);margin-left:4px;}
+.fb2{padding:7px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.1);cursor:pointer;background:transparent;color:rgba(255,255,255,.5);font-size:13px;transition:all .2s;}
+.fb2:hover{color:#fff;border-color:rgba(225,29,72,.4);}
+body.pm .deck{padding:0;}
+body.pm .slide{width:100vw;height:100vh;margin:0;border-radius:0;border:none;display:none!important;box-shadow:none;}
+body.pm .slide.act{display:flex!important;}
+body.pm .slabel{display:none;}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- SLIDE 1 -->
+<div class="slide" id="s1">
+  <div class="hbg"></div><div class="grid"></div>
+  <div class="fc" style="width:120px;height:120px;border-color:rgba(225,29,72,.15);top:8%;left:62%;animation-duration:9s;background:radial-gradient(ellipse at 35% 35%,rgba(225,29,72,.08),transparent);"></div>
+  <div class="fc" style="width:70px;height:70px;border-color:rgba(16,185,129,.2);top:65%;left:72%;animation-duration:7s;animation-delay:1.5s;background:radial-gradient(ellipse at 40% 40%,rgba(16,185,129,.07),transparent);"></div>
+  <div class="fc" style="width:45px;height:45px;border-color:rgba(139,92,246,.2);top:20%;left:80%;animation-duration:11s;animation-delay:3s;"></div>
+  <div class="fc" style="width:90px;height:90px;border-color:rgba(56,189,248,.12);top:72%;left:52%;animation-duration:13s;animation-delay:.8s;"></div>
+  <div class="fc" style="width:30px;height:30px;border-color:rgba(225,29,72,.25);top:82%;left:85%;animation-duration:6s;animation-delay:2s;"></div>
+  <!-- SVG Microscope -->
+  <div style="position:absolute;right:90px;top:50%;transform:translateY(-50%);animation:float 8s ease-in-out infinite;opacity:.5;">
+    <svg width="260" height="400" viewBox="0 0 260 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="105" y="20" width="20" height="100" rx="4" fill="#E11D48" fill-opacity=".7"/>
+      <rect x="90" y="20" width="50" height="12" rx="3" fill="#FF2A55" fill-opacity=".6"/>
+      <rect x="95" y="118" width="40" height="18" rx="4" fill="#E11D48" fill-opacity=".5"/>
+      <rect x="113" y="120" width="12" height="130" rx="3" fill="#C91040" fill-opacity=".7"/>
+      <rect x="75" y="244" width="80" height="14" rx="3" fill="#E11D48" fill-opacity=".5"/>
+      <rect x="65" y="256" width="100" height="10" rx="3" fill="#B00E38" fill-opacity=".6"/>
+      <polygon points="111,118 115,118 118,145 108,145" fill="#FF2A55" fill-opacity=".5"/>
+      <polygon points="105,128 121,128 125,158 101,158" fill="#FF2A55" fill-opacity=".3"/>
+      <ellipse cx="119" cy="282" rx="58" ry="13" fill="#8B0000" fill-opacity=".5"/>
+      <rect x="103" y="8" width="24" height="16" rx="4" fill="#FF2A55" fill-opacity=".8"/>
+      <rect x="107" y="2" width="16" height="10" rx="3" fill="#E11D48"/>
+      <circle cx="119" cy="252" r="22" fill="none" stroke="#E11D48" stroke-opacity=".4" stroke-width="1.5"/>
+      <circle cx="119" cy="252" r="14" fill="rgba(225,29,72,.1)"/>
+      <circle cx="119" cy="252" r="6" fill="rgba(225,29,72,.25)"/>
+      <circle cx="119" cy="252" r="34" fill="none" stroke="#E11D48" stroke-opacity=".12" stroke-width="1"/>
+      <circle cx="73" cy="214" r="8" fill="#E11D48" fill-opacity=".4" stroke="#FF2A55" stroke-opacity=".3" stroke-width="1"/>
+      <circle cx="165" cy="214" r="8" fill="#E11D48" fill-opacity=".4" stroke="#FF2A55" stroke-opacity=".3" stroke-width="1"/>
+      <line x1="119" y1="266" x2="119" y2="350" stroke="#E11D48" stroke-opacity=".15" stroke-width="1" stroke-dasharray="4 4"/>
+      <circle cx="119" cy="370" r="28" fill="none" stroke="rgba(56,189,248,.4)" stroke-width="1.5"/>
+      <circle cx="119" cy="370" r="18" fill="rgba(56,189,248,.08)"/>
+      <circle cx="113" cy="366" r="6" fill="rgba(16,185,129,.2)" stroke="rgba(16,185,129,.4)" stroke-width="1"/>
+      <circle cx="95" cy="380" r="7" fill="none" stroke="rgba(225,29,72,.3)" stroke-width="1"/>
+      <circle cx="141" cy="364" r="5" fill="none" stroke="rgba(139,92,246,.3)" stroke-width="1"/>
+    </svg>
+  </div>
+  <div class="cnt">
+    <div class="lft">
+      <div class="eb">
+        <div class="dot"></div>
+        <span>Team PanchTatva &middot; AI Research Platform</span>
+        <div class="dot"></div>
+      </div>
+      <h1>Jeeva<span>Drishti</span></h1>
+      <div style="font-family:var(--fh);font-size:20px;font-weight:500;color:rgba(255,255,255,.6);margin-bottom:8px;letter-spacing:-.01em;">An Adaptive Vision-Language Framework</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.4);margin-bottom:28px;">for Zero-Shot Cell Detection in Optical Microscopy</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px;">
+        <div class="pill pr">&#128300; Computer Vision</div>
+        <div class="pill ps">&#129504; Vision-Language Models</div>
+        <div class="pill pe">&#129506; SAM &middot; Zero-Shot</div>
+        <div class="pill pp">&#129658; Medical AI</div>
+      </div>
+      <div class="tb">
+        <div class="tl">Team PanchTatva</div>
+        <div style="font-size:16px;font-weight:600;">&#127919; Ranjan Kumar Shaw &mdash; Team Lead</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.5);">Moumita Paul &middot; Richa Mondal &middot; Diptangshu Majumder &middot; Sampriti Sinha</div>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:32px;left:72px;right:440px;font-size:11px;color:rgba(255,255,255,.2);font-style:italic;line-height:1.5;">"Can a Vision-Language Model detect previously unseen cell types from only a few visual examples?"</div>
+  <div class="bbar"></div>
+  <div class="snum">01 / 07</div>
+</div>
+<div class="slabel">SLIDE 1 &mdash; TITLE</div>
+
+<!-- SLIDE 2 -->
+<div class="slide" id="s2">
+  <div class="gr" style="width:600px;height:600px;top:-200px;right:-200px;opacity:.4;"></div>
+  <div class="grid"></div>
+  <div class="topbar">
+    <div class="bm"><div class="bmd"></div><div class="bmn">Jeeva<span>Drishti</span></div></div>
+    <div class="pill pr">Problem Statement</div>
+  </div>
+  <div class="main">
+    <div class="sh">
+      <h2>The Challenge in Modern Microscopy</h2>
+      <div class="hl"></div>
+      <div style="font-size:11px;color:var(--tm);white-space:nowrap;">Why conventional approaches fail</div>
+    </div>
+    <div class="pgrid">
+      <div class="pc">
+        <div class="pi">&#128300;</div>
+        <div class="pstat">10,000+</div>
+        <div class="pt">Cells Per Slide</div>
+        <div class="pd">Experts manually inspect tens of thousands of cells &mdash; time-consuming and prone to fatigue-induced error.</div>
+      </div>
+      <div class="pc">
+        <div class="pi">&#128683;</div>
+        <div class="pt">Closed-Vocabulary Models</div>
+        <div class="pd">Standard CNNs (YOLO, Faster R-CNN) <strong style="color:#FF6B88;">fail completely</strong> when encountering novel or rare cell phenotypes.</div>
+      </div>
+      <div class="pc">
+        <div class="pi">&#127758;</div>
+        <div class="pt">Pathologist Shortage</div>
+        <div class="pd">In LMICs, pathologist-to-population ratios can reach <strong style="color:#FF6B88;">1 : 1,000,000</strong> &mdash; manual screening is not scalable.</div>
+      </div>
+      <div class="pc">
+        <div class="pi">&#127775;</div>
+        <div class="pt">Staining &amp; Domain Shift</div>
+        <div class="pd">Different stains (Giemsa, H&amp;E, Papanicolaou) and modalities (brightfield, phase-contrast, fluorescence) cause accuracy collapse.</div>
+      </div>
+      <div class="pc">
+        <div class="pi">&#127991;</div>
+        <div class="pt">Annotation Bottleneck</div>
+        <div class="pd">Pixel-level labelling of dense cell images requires hundreds of expert-hours &mdash; cost-prohibitive and unscalable.</div>
+      </div>
+      <div class="pc">
+        <div class="pi">&#9877;</div>
+        <div class="pt">Autonomous AI Risk</div>
+        <div class="pd">Black-box classification without spatial evidence or human oversight creates unacceptable risk in clinical settings.</div>
+      </div>
+    </div>
+    <div class="pflow" style="margin-top:14px;">
+      <div class="pf">&#128247;<br>Manual Inspection</div><div class="pa2">&rsaquo;</div>
+      <div class="pf">&#128546;<br>Cognitive Fatigue</div><div class="pa2">&rsaquo;</div>
+      <div class="pf">&#10060;<br>Missed Novel Cells</div><div class="pa2">&rsaquo;</div>
+      <div class="pf">&#128260;<br>Domain Shift Failure</div><div class="pa2">&rsaquo;</div>
+      <div class="pf">&#9888;<br>No Scalable Solution</div>
+      <div class="pa2" style="color:var(--em);">&rarr;</div>
+      <div class="pf" style="background:rgba(225,29,72,.12);border-color:rgba(225,29,72,.3);color:#fff;border-radius:0 8px 8px 0;font-weight:700;">&#127919; Need: Adaptive<br>Open-Vocabulary AI</div>
+    </div>
+  </div>
+  <div class="snum">02 / 07</div>
+</div>
+<div class="slabel">SLIDE 2 &mdash; PROBLEM STATEMENT</div>
+
+<!-- SLIDE 3 -->
+<div class="slide" id="s3">
+  <div class="ge" style="width:500px;height:500px;top:-150px;left:-100px;opacity:.5;"></div>
+  <div class="gp" style="width:400px;height:400px;bottom:-100px;right:-80px;opacity:.4;"></div>
+  <div class="grid"></div>
+  <div class="topbar">
+    <div class="bm"><div class="bmd"></div><div class="bmn">Jeeva<span>Drishti</span></div></div>
+    <div class="pill pe">Solution &amp; Uniqueness</div>
+  </div>
+  <div class="main">
+    <div class="lc">
+      <div>
+        <div style="font-size:11px;color:var(--crimson-b);letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;">Core Philosophy</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.7);font-style:italic;background:rgba(225,29,72,.07);border-left:3px solid var(--crimson);padding:10px 14px;border-radius:0 8px 8px 0;line-height:1.5;">"JeevaDrishti does not decide the diagnosis. It helps the expert decide <strong style="color:#FF8C9E;">where to look first</strong>."</div>
+      </div>
+      <div class="pw">
+        <div style="font-size:11px;font-weight:700;color:var(--crimson-b);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Hybrid AI Pipeline</div>
+        <div class="ps2 pr2"><div class="pico">&#128444;</div><div><div class="plb">Microscopy Image Upload</div><div class="psb">Optical domain validation &amp; auto-routing</div></div></div>
+        <div class="pcon"></div>
+        <div class="ps2 hi"><div class="pico">&#9986;</div><div><div class="plb">SAM &mdash; Class-Agnostic Proposals</div><div class="psb">Segment Anything Model: boundary delineation without taxonomy</div></div></div>
+        <div class="pcon"></div>
+        <div class="ps2"><div class="pico">&#129513;</div><div><div class="plb">Candidate Region Extraction</div><div class="psb">128&#215;128 patch crops with geometric validation</div></div></div>
+        <div class="pcon"></div>
+        <div class="ps2 pr2"><div class="pico">&#129504;</div><div><div class="plb">VLM &mdash; Semantic Classification</div><div class="psb">Google Gemini: zero-shot or few-shot in-context prompting</div></div></div>
+        <div class="pcon"></div>
+        <div class="ps2 se"><div class="pico">&#9989;</div><div><div class="plb">Human-in-the-Loop Review</div><div class="psb">Priority-ranked candidates for expert triage</div></div></div>
+      </div>
+    </div>
+    <div class="rc">
+      <div style="font-size:11px;color:var(--crimson-b);letter-spacing:.1em;text-transform:uppercase;font-weight:700;">What Makes JeevaDrishti Unique</div>
+      <div class="uc"><div class="ic ir">&#127919;</div><div class="ut"><h4>Open-Vocabulary Detection</h4><p>Detects <strong>unseen</strong> cell types via language context &mdash; no retraining required.</p></div></div>
+      <div class="uc"><div class="ic ip">&#128279;</div><div class="ut"><h4>SAM + VLM Hybrid Engine</h4><p>Decouples localization (SAM) from semantics (VLM) for modality-agnostic analysis.</p></div></div>
+      <div class="uc"><div class="ic is">&#128194;</div><div class="ut"><h4>5-Domain Unified Architecture</h4><p>Hematology, Malaria, Leukemia, Anemia, Cervical Cytology &mdash; one platform.</p></div></div>
+      <div style="font-size:11px;color:var(--tm);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin:6px 0 6px;">Research: Shot Configuration</div>
+      <div class="sc">
+        <div class="sb"><div class="sn">0</div><div class="sl2">Zero-Shot</div><div class="sd">Pure language context &mdash; no visual exemplars provided</div></div>
+        <div class="sb" style="background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.25);"><div class="sn" style="color:#34D399;">6</div><div class="sl2">Six-Shot</div><div class="sd">6 real exemplar patches per class &mdash; anchors variance</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="snum">03 / 07</div>
+</div>
+<div class="slabel">SLIDE 3 &mdash; SOLUTION &amp; UNIQUENESS</div>
+
+<!-- SLIDE 4 -->
+<div class="slide" id="s4">
+  <div class="gp" style="width:500px;height:400px;top:-100px;left:-100px;opacity:.35;"></div>
+  <div class="gr" style="width:400px;height:400px;bottom:-100px;right:-80px;opacity:.35;"></div>
+  <div class="grid"></div>
+  <div class="topbar">
+    <div class="bm"><div class="bmd"></div><div class="bmn">Jeeva<span>Drishti</span></div></div>
+    <div class="pill pp">Technology Stack</div>
+  </div>
+  <div class="main">
+    <div style="font-family:var(--fh);font-size:22px;font-weight:700;color:rgba(255,255,255,.9);margin-bottom:14px;">Full-Stack AI Research Platform</div>
+    <div class="tcat" style="flex:1;">
+      <div class="tc">
+        <div class="tct r">&#9883; Frontend</div>
+        <div class="ti">
+          <div class="tt">&#9883; React 19</div><div class="tt">&#9889; Vite 6</div>
+          <div class="tt">&#127912; Tailwind CSS</div><div class="tt">&#127744; Framer Motion</div>
+          <div class="tt">&#127760; Three.js</div><div class="tt">&#128202; Recharts</div>
+          <div class="tt">&#128451; Zustand</div>
+        </div>
+        <div style="margin-top:auto;padding-top:8px;font-size:10px;color:rgba(255,255,255,.35);">WebGL 3D &middot; Animations &middot; Responsive SPA</div>
+      </div>
+      <div class="tc">
+        <div class="tct e">&#128013; Backend</div>
+        <div class="ti">
+          <div class="tt">&#128013; Python 3.11+</div><div class="tt">&#128640; FastAPI</div>
+          <div class="tt">&#9989; Pydantic v2</div><div class="tt">&#128456; SQLAlchemy 2.0</div>
+          <div class="tt">&#128260; Alembic</div><div class="tt">&#128196; ReportLab</div>
+          <div class="tt">&#128272; JWT Auth</div>
+        </div>
+        <div style="margin-top:auto;padding-top:8px;font-size:10px;color:rgba(255,255,255,.35);">Async REST API &middot; OpenAPI &middot; Multi-tenant</div>
+      </div>
+      <div class="tc">
+        <div class="tct s">&#129504; AI / ML</div>
+        <div class="ti">
+          <div class="tt">&#9986; SAM (Meta)</div><div class="tt">&#128142; Gemini VLM</div>
+          <div class="tt">&#128293; PyTorch</div><div class="tt">&#128444; OpenCV</div>
+          <div class="tt">&#128444; Pillow</div><div class="tt">&#128290; NumPy</div>
+        </div>
+        <div style="margin-top:auto;padding-top:8px;font-size:10px;color:rgba(255,255,255,.35);">Zero-Shot &middot; Few-Shot &middot; Hybrid Inference</div>
+      </div>
+      <div class="tc">
+        <div class="tct a">&#128456; Database</div>
+        <div class="ti">
+          <div class="tt">&#128024; PostgreSQL 16</div>
+          <div class="tt">&#128260; Alembic Migrations</div>
+          <div class="tt">&#128273; UUIDv4 PKs</div>
+        </div>
+        <div style="margin-top:10px;font-size:10px;color:rgba(255,255,255,.35);">Multi-tenant &middot; Audit trail</div>
+        <div class="tct o" style="margin-top:12px;">&#128202; Datasets</div>
+        <div class="ti" style="margin-top:5px;">
+          <div class="tt" style="font-size:10px;">&#128300; Micro-OD</div>
+          <div class="tt" style="font-size:10px;">&#129506; NIH-NLM Pf</div>
+          <div class="tt" style="font-size:10px;">&#129405; C-NMC 2019</div>
+          <div class="tt" style="font-size:10px;">&#128308; RedTell</div>
+          <div class="tt" style="font-size:10px;">&#128309; SIPaKMeD</div>
+        </div>
+      </div>
+      <div class="tc" style="grid-column:2/4;grid-row:2;">
+        <div class="tct p">&#9729; Deployment Infrastructure</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.08);">
+            <div style="font-size:22px;">&#9650;</div>
+            <div><div style="font-size:12px;font-weight:600;">Vercel</div><div style="font-size:10px;color:rgba(255,255,255,.4);">React Frontend &middot; Global CDN</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.08);">
+            <div style="font-size:22px;">&#9729;</div>
+            <div><div style="font-size:12px;font-weight:600;">Render</div><div style="font-size:10px;color:rgba(255,255,255,.4);">FastAPI Backend &middot; Linux Container</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.08);">
+            <div style="font-size:22px;">&#128051;</div>
+            <div><div style="font-size:12px;font-weight:600;">Docker Compose</div><div style="font-size:10px;color:rgba(255,255,255,.4);">Multi-container local stack</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="snum">04 / 07</div>
+</div>
+<div class="slabel">SLIDE 4 &mdash; TECHNOLOGY STACK</div>
+
+<!-- SLIDE 5 -->
+<div class="slide" id="s5">
+  <div class="ge" style="width:600px;height:400px;top:-100px;right:-100px;opacity:.3;"></div>
+  <div class="grid"></div>
+  <div class="topbar">
+    <div class="bm"><div class="bmd"></div><div class="bmn">Jeeva<span>Drishti</span></div></div>
+    <div class="pill ps">End-to-End Workflow</div>
+  </div>
+  <div class="main">
+    <div class="ww">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:6px;">
+        <div class="wn wp"><div class="wi">&#128105;&#8205;&#128300;</div><div class="wt"><h4>User / Researcher</h4><p>Uploads high-resolution microscopy image</p></div></div>
+        <div class="wn wp"><div class="wi">&#128269;</div><div class="wt"><h4>Image Validation</h4><p>Laplacian focus entropy &middot; Chromatic checks</p></div></div>
+        <div class="wn wh"><div class="wi">&#128194;</div><div class="wt"><h4>Auto Domain Selection</h4><p>Optical heuristics &rarr; 5 dataset adapters</p></div></div>
+      </div>
+      <div style="display:flex;justify-content:center;margin:3px 0;"><div style="font-size:18px;color:rgba(225,29,72,.4);">&#8595;</div></div>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:9px;align-items:center;margin-bottom:4px;">
+        <div style="display:flex;flex-direction:column;gap:5px;border-radius:9px;padding:10px;background:rgba(225,29,72,.05);border:1px solid rgba(225,29,72,.15);">
+          <div style="font-size:10px;font-weight:700;color:var(--crimson-b);text-transform:uppercase;letter-spacing:.1em;text-align:center;margin-bottom:3px;">&#128269; Object Detection Path</div>
+          <div class="wn" style="margin:0;"><div class="wi">&#9986;</div><div class="wt"><h4>SAM Proposals</h4><p>Class-agnostic boundary segmentation</p></div></div>
+          <div class="war">&#8595;</div>
+          <div class="wn" style="margin:0;"><div class="wi">&#129513;</div><div class="wt"><h4>Candidate Patches</h4><p>128&#215;128 crops with geometric filtering</p></div></div>
+          <div class="war">&#8595;</div>
+          <div class="wn wp" style="margin:0;"><div class="wi">&#129504;</div><div class="wt"><h4>VLM Classification</h4><p>0-Shot or 6-Shot Gemini inference</p></div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:0 6px;">
+          <div style="width:1px;height:28px;background:rgba(255,255,255,.1);"></div>
+          <div style="font-size:9px;color:rgba(255,255,255,.25);text-transform:uppercase;writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.1em;">vs</div>
+          <div style="width:1px;height:28px;background:rgba(255,255,255,.1);"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;border-radius:9px;padding:10px;background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.15);">
+          <div style="font-size:10px;font-weight:700;color:#34D399;text-transform:uppercase;letter-spacing:.1em;text-align:center;margin-bottom:3px;">&#128309; Cell Classification Path</div>
+          <div class="wn ws" style="margin:0;"><div class="wi">&#128444;</div><div class="wt"><h4>Whole-Cell Image</h4><p>Pre-cropped single-cell specimen</p></div></div>
+          <div class="war" style="color:rgba(16,185,129,.5);">&#8595;</div>
+          <div class="wn ws" style="margin:0;"><div class="wi">&#129504;</div><div class="wt"><h4>Direct VLM</h4><p>Skips SAM; full image classification</p></div></div>
+          <div class="war" style="color:rgba(16,185,129,.5);">&#8595;</div>
+          <div class="wn ws" style="margin:0;"><div class="wi">&#127991;</div><div class="wt"><h4>Category Output</h4><p>Leukemia / Cervical / Anemia class</p></div></div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:center;margin:4px 0;"><div style="font-size:18px;color:rgba(225,29,72,.4);">&#8595;</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;">
+        <div class="wn"><div class="wi">&#128202;</div><div class="wt"><h4>Confidence Scoring</h4><p>Per-cell confidence &middot; Spatial priority index</p></div></div>
+        <div class="wn wh"><div class="wi">&#128065;</div><div class="wt"><h4>Human-in-the-Loop</h4><p>Priority-ranked triage &middot; Annotated overlays</p></div></div>
+        <div class="wn ws"><div class="wi">&#128203;</div><div class="wt"><h4>Research Result + PDF</h4><p>ReportLab audit trail &middot; Expert confirmation</p></div></div>
+      </div>
+    </div>
+    <div class="winfo">
+      <div class="wic">
+        <h4>&#127919; Research Config</h4>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;background:rgba(225,29,72,.08);border:1px solid rgba(225,29,72,.2);border-radius:7px;padding:9px;text-align:center;">
+            <div style="font-size:26px;font-weight:700;color:var(--crimson-b);font-family:var(--fh);">0</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;">Zero-Shot</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:3px;">Language only</div>
+          </div>
+          <div style="flex:1;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:7px;padding:9px;text-align:center;">
+            <div style="font-size:26px;font-weight:700;color:#34D399;font-family:var(--fh);">6</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;">Six-Shot</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:3px;">6 visual exemplars</div>
+          </div>
+        </div>
+      </div>
+      <div class="wic">
+        <h4>&#128194; 5 Biological Domains</h4>
+        <div style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:rgba(255,255,255,.6);">
+          <div>&#128300; Micro-OD &mdash; 10 classes (BBBC, BCCD, LIVECell, NIH-3T3)</div>
+          <div>&#129506; NIH-NLM &mdash; Malaria parasite detection</div>
+          <div>&#129405; C-NMC 2019 &mdash; Leukemia blast cytology</div>
+          <div>&#128308; RedTell &mdash; Sickle cell &amp; anemia</div>
+          <div>&#128309; SIPaKMeD &mdash; Cervical cytology (5 classes)</div>
+        </div>
+      </div>
+      <div class="wic">
+        <h4>&#9888; Non-Diagnostic</h4>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);line-height:1.5;">All outputs are <em>candidate predictions</em> for expert review &mdash; never autonomous clinical decisions.</div>
+      </div>
+    </div>
+  </div>
+  <div class="snum">05 / 07</div>
+</div>
+<div class="slabel">SLIDE 5 &mdash; WORKFLOW</div>
+
+<!-- SLIDE 6 -->
+<div class="slide" id="s6">
+  <div style="position:absolute;width:500px;height:400px;top:-80px;right:-80px;border-radius:50%;background:radial-gradient(ellipse,rgba(245,158,11,.18) 0%,transparent 70%);pointer-events:none;"></div>
+  <div class="grid"></div>
+  <div class="topbar">
+    <div class="bm"><div class="bmd"></div><div class="bmn">Jeeva<span>Drishti</span></div></div>
+    <div class="pill pa">Business Model</div>
+  </div>
+  <div class="main">
+    <div style="font-family:var(--fh);font-size:21px;font-weight:700;color:rgba(255,255,255,.9);margin-bottom:3px;">Commercialization &amp; Value Creation</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:12px;">Adaptive AI microscopy intelligence &mdash; scalable from labs to global health infrastructure</div>
+    <div class="bmcg">
+      <div class="bmcc">
+        <div class="bctt">&#129309; Key Partners</div>
+        <div class="bi">Medical Research Institutes</div>
+        <div class="bi">Pathology &amp; Diagnostic Labs</div>
+        <div class="bi">WHO / Global Health NGOs</div>
+        <div class="bi">Google Cloud / Gemini API</div>
+        <div class="bi">Biomedical Dataset Consortia</div>
+      </div>
+      <div class="bmcc ct">
+        <div class="bctt">&#128142; Value Proposition</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin:5px 0;">
+          <div class="pill pr" style="font-size:9px;">Open-Vocabulary AI</div>
+          <div class="pill pe" style="font-size:9px;">Zero Retraining</div>
+          <div class="pill ps" style="font-size:9px;">5 Biological Domains</div>
+        </div>
+        <div class="bi">AI-assisted triage reducing manual review burden</div>
+        <div class="bi">Adapts to novel cells with 0&ndash;6 shot learning</div>
+        <div class="bi">Scalable across low-resource environments</div>
+        <div class="bi">Human-in-the-loop, non-diagnostic, audit-traceable</div>
+      </div>
+      <div class="bmcc">
+        <div class="bctt s">&#128101; Target Users</div>
+        <div class="bi">Medical Research Laboratories</div>
+        <div class="bi">Pathology Training Institutions</div>
+        <div class="bi">Public Health Screening Programs</div>
+        <div class="bi">Pharmaceutical R&amp;D Teams</div>
+        <div class="bi">Telemedicine &amp; Rural Healthcare</div>
+      </div>
+      <div class="bmcc">
+        <div class="bctt a">&#9881; Key Activities</div>
+        <div class="bi">Continuous VLM benchmark research</div>
+        <div class="bi">Dataset adapter expansion</div>
+        <div class="bi">Regulatory / clinical validation</div>
+        <div class="bi">Platform SaaS maintenance</div>
+      </div>
+      <div class="bmcc cb">
+        <div class="bctt e">&#128176; Potential Revenue Streams</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;">
+          <div style="background:rgba(16,185,129,.08);border-radius:6px;padding:7px;text-align:center;border:1px solid rgba(16,185,129,.15);">
+            <div style="font-size:13px;">&#127973;</div><div style="font-size:10px;font-weight:600;color:#34D399;">Lab SaaS</div><div style="font-size:9px;color:rgba(255,255,255,.4);">Subscription per seat</div>
+          </div>
+          <div style="background:rgba(16,185,129,.08);border-radius:6px;padding:7px;text-align:center;border:1px solid rgba(16,185,129,.15);">
+            <div style="font-size:13px;">&#128300;</div><div style="font-size:10px;font-weight:600;color:#34D399;">Research API</div><div style="font-size:9px;color:rgba(255,255,255,.4);">Per-call VLM access</div>
+          </div>
+          <div style="background:rgba(16,185,129,.08);border-radius:6px;padding:7px;text-align:center;border:1px solid rgba(16,185,129,.15);">
+            <div style="font-size:13px;">&#127963;</div><div style="font-size:10px;font-weight:600;color:#34D399;">NGO / Gov Grants</div><div style="font-size:9px;color:rgba(255,255,255,.4);">Global health programs</div>
+          </div>
+          <div style="background:rgba(16,185,129,.08);border-radius:6px;padding:7px;text-align:center;border:1px solid rgba(16,185,129,.15);">
+            <div style="font-size:13px;">&#128218;</div><div style="font-size:10px;font-weight:600;color:#34D399;">Academic License</div><div style="font-size:9px;color:rgba(255,255,255,.4);">University editions</div>
+          </div>
+        </div>
+      </div>
+      <div class="bmcc">
+        <div class="bctt p">&#128200; Scalability Roadmap</div>
+        <div class="bi">Edge / offline VLM inference (LMICs)</div>
+        <div class="bi">Multilingual voice assistant (Bhashini API)</div>
+        <div class="bi">Federated learning across labs</div>
+        <div class="bi">Gigapixel WSI whole-slide support</div>
+        <div class="bi">Mobile microscopy attachment support</div>
+      </div>
+    </div>
+  </div>
+  <div class="snum">06 / 07</div>
+</div>
+<div class="slabel">SLIDE 6 &mdash; BUSINESS MODEL</div>
+
+<!-- SLIDE 7 -->
+<div class="slide" id="s7">
+  <div class="hbg"></div><div class="grid"></div>
+  <div class="fc" style="width:200px;height:200px;border-color:rgba(225,29,72,.08);top:-50px;left:-50px;animation-duration:12s;background:radial-gradient(ellipse,rgba(225,29,72,.04),transparent);"></div>
+  <div class="fc" style="width:150px;height:150px;border-color:rgba(139,92,246,.08);bottom:-40px;right:-40px;animation-duration:10s;animation-delay:2s;"></div>
+  <div class="fc" style="width:80px;height:80px;border-color:rgba(16,185,129,.15);top:25%;right:12%;animation-duration:7s;animation-delay:1s;"></div>
+  <div class="fc" style="width:50px;height:50px;border-color:rgba(56,189,248,.15);bottom:25%;left:12%;animation-duration:9s;animation-delay:3s;"></div>
+  <div class="cnt7">
+    <div class="qar"><div class="qat">Q&amp;A</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+      <div class="bn">Jeeva<span>Drishti</span></div>
+      <div style="font-size:15px;color:rgba(255,255,255,.45);font-style:italic;">"Empowering Microscopy with Intelligent Vision"</div>
+    </div>
+    <div style="font-family:var(--fh);font-size:22px;color:rgba(255,255,255,.7);">Thank You &#128591;</div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <div style="font-size:11px;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.18em;">Team PanchTatva</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
+        <div class="cc ld">&#11088; Ranjan Kumar Shaw (Lead)</div>
+        <div class="cc">Moumita Paul</div>
+        <div class="cc">Richa Mondal</div>
+        <div class="cc">Diptangshu Majumder</div>
+        <div class="cc">Sampriti Sinha</div>
+      </div>
+    </div>
+    <div style="max-width:580px;text-align:center;padding:12px 18px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);">
+      <div style="font-size:11px;color:var(--crimson-b);font-style:italic;line-height:1.6;">"Can a Vision-Language Model detect previously unseen cell types from only a few visual examples?"</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+      <div class="pill pr" style="font-size:10px;">&#128300; Computer Vision</div>
+      <div class="pill ps" style="font-size:10px;">&#129504; VLM &middot; SAM</div>
+      <div class="pill pe" style="font-size:10px;">&#129514; Zero-Shot Learning</div>
+      <div class="pill pp" style="font-size:10px;">&#129658; Medical AI</div>
+      <div class="pill pa" style="font-size:10px;">&#128309; Microscopy</div>
+    </div>
+  </div>
+  <div class="bbar"></div>
+  <div class="snum">07 / 07</div>
+</div>
+<div class="slabel">SLIDE 7 &mdash; Q&amp;A + THANK YOU</div>
+
+</div>
+
+<!-- NAV -->
+<div class="navb" id="navb">
+  <button class="nb" onclick="prev()">&#8592; Prev</button>
+  <div class="ndw">
+    <div class="nd act" onclick="go(0)" title="Title"></div>
+    <div class="nd" onclick="go(1)" title="Problem"></div>
+    <div class="nd" onclick="go(2)" title="Solution"></div>
+    <div class="nd" onclick="go(3)" title="Tech Stack"></div>
+    <div class="nd" onclick="go(4)" title="Workflow"></div>
+    <div class="nd" onclick="go(5)" title="Business Model"></div>
+    <div class="nd" onclick="go(6)" title="Q&A"></div>
+  </div>
+  <button class="nb" onclick="next()">Next &#8594;</button>
+  <button class="fb2" onclick="toggle()" id="mb" title="Presentation Mode">&#9974;</button>
+  <span class="smi" id="smi">1 / 7</span>
+</div>
+
+<script>
+var cur=0,pm=false,tot=7;
+var sl=document.querySelectorAll('.slide'),ds=document.querySelectorAll('.nd'),smi=document.getElementById('smi');
+function upd(){ds.forEach(function(d,i){d.classList.toggle('act',i===cur)});smi.textContent=(cur+1)+' / '+tot;}
+function go(i){cur=Math.max(0,Math.min(tot-1,i));if(pm){sl.forEach(function(s,j){s.classList.toggle('act',j===cur)})}else{sl[cur].scrollIntoView({behavior:'smooth',block:'center'});}upd();}
+function next(){go(cur+1);}function prev(){go(cur-1);}
+function toggle(){pm=!pm;document.body.classList.toggle('pm',pm);document.getElementById('mb').style.color=pm?'#FF2A55':'';if(pm){sl.forEach(function(s,i){s.classList.toggle('act',i===cur)})}else{sl.forEach(function(s){s.classList.remove('act')});setTimeout(function(){sl[cur].scrollIntoView({behavior:'smooth',block:'center'})},100);}}
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '){e.preventDefault();next();}
+  else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();prev();}
+  else if(e.key==='f'||e.key==='F'){toggle();}
+  else if(e.key==='Escape'&&pm){toggle();}
+  else if(e.key>='1'&&e.key<='7'){go(parseInt(e.key)-1);}
+});
+var ob=new IntersectionObserver(function(entries){if(!pm){entries.forEach(function(en){if(en.isIntersecting&&en.intersectionRatio>0.5){cur=Array.from(sl).indexOf(en.target);upd();}});}},{threshold:0.5});
+sl.forEach(function(s){ob.observe(s);});
+</script>
+</body>
+</html>
