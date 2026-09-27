@@ -35,7 +35,7 @@ reports/
 /Micro-OD/
 /data/
 /dataset/
-/sampled_dataset/
+sampled_dataset/
 *.zip
 *.tar
 *.tar.gz
