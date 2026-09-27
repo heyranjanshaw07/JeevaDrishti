@@ -36,10 +36,18 @@ import { getAnalysisHistory, MOCK_ANALYSIS_HISTORY } from '@/services/api'
 
 // ─── Animated KPI Counter Component ──────────────────────────────────────────
 function AnimatedCounter({ value, duration = 1.3 }) {
+  const strVal = String(value ?? '')
+
+  // If value is non-numeric or configuration string (e.g. "0 / 6"), render as-is cleanly
+  if (strVal.includes('/') || isNaN(parseInt(strVal.replace(/[^0-9]/g, ''), 10))) {
+    return <span>{value}</span>
+  }
+
+  const numericTarget = parseInt(strVal.replace(/[^0-9]/g, ''), 10)
+  const hasPlus = strVal.includes('+')
   const [displayValue, setDisplayValue] = useState(0)
 
   useEffect(() => {
-    const numericTarget = parseInt(String(value).replace(/,/g, ''), 10)
     if (isNaN(numericTarget)) return
 
     let startTime = null
@@ -62,14 +70,9 @@ function AnimatedCounter({ value, duration = 1.3 }) {
 
     animationFrameId = requestAnimationFrame(step)
     return () => cancelAnimationFrame(animationFrameId)
-  }, [value, duration])
+  }, [numericTarget, duration])
 
-  // If value is non-numeric string (e.g. "0 / 1 / 3 / 6"), render as-is cleanly
-  if (typeof value === 'string' && isNaN(parseInt(value.replace(/,/g, ''), 10))) {
-    return <span>{value}</span>
-  }
-
-  return <span>{(displayValue ?? 0).toLocaleString()}</span>
+  return <span>{(displayValue ?? 0).toLocaleString()}{hasPlus ? '+' : ''}</span>
 }
 
 
@@ -1023,12 +1026,12 @@ export default function Dashboard() {
                       </h3>
                     </div>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-crimson/10 text-crimson border border-crimson/25">
-                      4 DATASETS
+                      5 DATASETS · 21,756 IMAGES
                     </span>
                   </div>
 
-                  {/* 4 Datasets: BBBC, BCCD, LIVECell, NIH-3T3 */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                  {/* 5 Clinical & Benchmark Datasets */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
                     {PROJECT_DATASET_ECOSYSTEM.map((ds) => (
                       <div
                         key={ds.id}
@@ -1038,14 +1041,14 @@ export default function Dashboard() {
                           <span className="text-xs font-heading font-extrabold text-white tracking-wide">
                             {ds.id}
                           </span>
-                          <span className="text-[10px] font-mono text-crimson">
-                            {ds.samples} imgs
+                          <span className="text-[10px] font-mono text-crimson font-semibold">
+                            {typeof ds.samples === 'number' ? ds.samples.toLocaleString() : ds.samples} imgs
                           </span>
                         </div>
-                        <p className="text-[11px] text-white/75 line-clamp-1 mb-1">
+                        <p className="text-[11px] text-white/75 line-clamp-1 mb-1 font-medium">
                           {ds.name}
                         </p>
-                        <span className="text-[10px] font-mono text-text-muted block">
+                        <span className="text-[10px] font-mono text-text-muted block truncate">
                           {ds.modality}
                         </span>
                       </div>
@@ -1055,7 +1058,7 @@ export default function Dashboard() {
 
                 <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between">
                   <span className="text-xs font-mono text-text-muted">
-                    Total Test Annotations: <strong className="text-white">5,551 cells</strong>
+                    Total Catalog: <strong className="text-white">21,756 images</strong> (5,551+ verified annotations)
                   </span>
                   <Button
                     variant="secondary"

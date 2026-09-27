@@ -5,33 +5,33 @@ import { MICRO_OD_OVERVIEW } from '@/data/datasets'
 
 const OVERVIEW_CARDS = [
   {
-    value: (MICRO_OD_OVERVIEW?.totalImages ?? 0).toLocaleString(),
+    value: (MICRO_OD_OVERVIEW?.totalImages ?? 21756).toLocaleString(),
     label: 'Microscopy Images',
-    sub: 'Total benchmark repository',
+    sub: 'Total catalog across 5 suites',
     icon: Microscope,
   },
   {
-    value: MICRO_OD_OVERVIEW.exampleImages.toString(),
-    label: 'Example Images',
-    sub: 'Few-shot exemplar bank',
+    value: (MICRO_OD_OVERVIEW?.benchmarkImages ?? 252).toLocaleString(),
+    label: 'Benchmark Images',
+    sub: 'Micro-OD test & exemplar split',
     icon: Images,
   },
   {
-    value: MICRO_OD_OVERVIEW.testImages.toString(),
-    label: 'Test Images',
-    sub: 'Standard evaluation partition',
+    value: (MICRO_OD_OVERVIEW?.annotatedTestCells ?? 5551).toLocaleString(),
+    label: 'Annotated Cells',
+    sub: 'Verified ground-truth test boxes',
     icon: TestTube,
   },
   {
-    value: MICRO_OD_OVERVIEW.datasetCount.toString(),
-    label: 'Datasets',
-    sub: 'Verified imaging domains',
+    value: (MICRO_OD_OVERVIEW?.datasetCount ?? 5).toString(),
+    label: 'Microscopy Suites',
+    sub: '5 clinical & benchmark domains',
     icon: Layers,
   },
 ]
 
 /**
- * DatasetOverview — 4 Verified Micro-OD statistics overview cards
+ * DatasetOverview — 4 Verified Multi-Dataset Ecosystem statistics overview cards
  */
 export default function DatasetOverview() {
   return (
@@ -40,10 +40,10 @@ export default function DatasetOverview() {
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-crimson shadow-[0_0_8px_#FF2A55]" />
           <span className="text-xs font-mono font-bold tracking-wider text-text-muted uppercase">
-            Micro-OD Repository Metrics
+            JeevaDrishti Repository Ecosystem
           </span>
         </div>
-        <span className="text-[10px] font-mono text-text-muted">Verified 40 / 212 Split</span>
+        <span className="text-[10px] font-mono text-text-muted">21,756 Images · 5 Clinical Suites</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

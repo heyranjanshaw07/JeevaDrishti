@@ -10,7 +10,8 @@
  */
 
 export const MICRO_OD_OVERVIEW = {
-  totalImages: 252,
+  totalImages: 21756,
+  benchmarkImages: 252,
   exampleImages: 40,
   testImages: 212,
   datasetCount: 5,
@@ -30,7 +31,7 @@ export const DATASETS = [
     taskType: 'object_detection',
     annotationType: 'Bounding Box (JSONL)',
     supportedShots: [0, 6],
-    imageCount: 252,
+    imageCount: 504,
     exampleImages: 40,
     testImages: 212,
     testBoxes: 5551,
@@ -50,9 +51,24 @@ export const DATASETS = [
     ],
     sampleImages: [
       {
-        url: '/samples/microscopy_cell_sample.jpg',
-        caption: 'Micro-OD Optical Microscopy Composite Specimen',
-        tag: 'Benchmark Suite',
+        url: '/samples/datasets/bbbc_sample.jpg',
+        caption: 'BBBC041 Fluorescence Staining Exemplar Field',
+        tag: 'Fluorescence',
+      },
+      {
+        url: '/samples/datasets/bccd_sample.jpg',
+        caption: 'BCCD Blood Smear Optical Cytology Field',
+        tag: 'Brightfield',
+      },
+      {
+        url: '/samples/datasets/livecell_sample.jpg',
+        caption: 'LIVECell Label-Free Phase-Contrast Microscopy',
+        tag: 'Phase-Contrast',
+      },
+      {
+        url: '/samples/datasets/nih3t3_sample.jpg',
+        caption: 'NIH-3T3 Fibroblast Proliferation Cell Culture',
+        tag: 'Cell Culture',
       },
     ],
   },
@@ -69,9 +85,9 @@ export const DATASETS = [
     taskType: 'object_detection',
     annotationType: 'Polygon (converted to Bounding Box)',
     supportedShots: [0, 6],
-    imageCount: 150,
+    imageCount: 965,
     exampleImages: 12,
-    testImages: 138,
+    testImages: 953,
     testBoxes: null,
     annotatedCells: 'Real Polygon Ground Truth',
     classesCount: 2,
@@ -79,7 +95,18 @@ export const DATASETS = [
       'Infected RBC',
       'Uninfected RBC',
     ],
-    sampleImages: [],
+    sampleImages: [
+      {
+        url: '/samples/datasets/malaria_sample_1.jpg',
+        caption: 'NIH-NLM Thin Blood Smear — P. falciparum Trophozoite Field',
+        tag: 'Thin Smear',
+      },
+      {
+        url: '/samples/datasets/malaria_sample_2.jpg',
+        caption: 'NIH-NLM Clinical Microscopy — Erythrocyte Parasitology Field',
+        tag: 'Giemsa Stained',
+      },
+    ],
   },
 
   // ─── 3. C-NMC 2019 Leukemia ──────────────────────────────────────────────
@@ -94,9 +121,9 @@ export const DATASETS = [
     taskType: 'cell_classification',
     annotationType: 'Cell-level Class Labels (ALL / HEM)',
     supportedShots: [0, 6],
-    imageCount: 1000,
+    imageCount: 15114,
     exampleImages: 12,
-    testImages: 988,
+    testImages: 15102,
     testBoxes: null,
     annotatedCells: 'Cell-level Crops',
     classesCount: 2,
@@ -104,7 +131,18 @@ export const DATASETS = [
       'ALL Blast',
       'Healthy Hematopoietic',
     ],
-    sampleImages: [],
+    sampleImages: [
+      {
+        url: '/samples/datasets/leukemia_sample_1.jpg',
+        caption: 'C-NMC 2019 Malignant B-ALL Lymphoblast Cell Specimen',
+        tag: 'ALL Blast',
+      },
+      {
+        url: '/samples/datasets/leukemia_sample_2.jpg',
+        caption: 'C-NMC 2019 Normal Hematopoietic Cell Specimen',
+        tag: 'Normal Cell',
+      },
+    ],
   },
 
   // ─── 4. RedTell Anemia ───────────────────────────────────────────────────
@@ -119,9 +157,9 @@ export const DATASETS = [
     taskType: 'cell_classification',
     annotationType: 'Class-Folder Derived Labels',
     supportedShots: [0, 6],
-    imageCount: 79,
+    imageCount: 158,
     exampleImages: 6,
-    testImages: 73,
+    testImages: 152,
     testBoxes: null,
     annotatedCells: 'Individual Cell Fields',
     classesCount: 3,
@@ -130,7 +168,18 @@ export const DATASETS = [
       'Sickle Cell Disease',
       'Thalassemia',
     ],
-    sampleImages: [],
+    sampleImages: [
+      {
+        url: '/samples/datasets/anemia_sample_1.jpg',
+        caption: 'RedTell RBC Morphology — Sickle Cell & Thalassemia Specimen',
+        tag: 'Fluo-4 Stained',
+      },
+      {
+        url: '/samples/datasets/anemia_sample_2.jpg',
+        caption: 'RedTell RBC Field — Erythrocyte Morphology Analysis',
+        tag: 'Brightfield Optical',
+      },
+    ],
   },
 
   // ─── 5. SIPaKMeD Cervical ────────────────────────────────────────────────
@@ -145,9 +194,9 @@ export const DATASETS = [
     taskType: 'cell_classification',
     annotationType: 'Cytological Morphological Categories',
     supportedShots: [0, 6],
-    imageCount: 966,
+    imageCount: 5015,
     exampleImages: 10,
-    testImages: 956,
+    testImages: 5005,
     testBoxes: null,
     annotatedCells: 'Isolated Cell Morphology',
     classesCount: 5,
@@ -158,7 +207,18 @@ export const DATASETS = [
       'Parabasal',
       'Superficial-Intermediate',
     ],
-    sampleImages: [],
+    sampleImages: [
+      {
+        url: '/samples/datasets/cervical_sample_1.jpg',
+        caption: 'SIPaKMeD Pap Smear — Dyskeratotic Cell Morphology Specimen',
+        tag: 'Pap Smear Cytology',
+      },
+      {
+        url: '/samples/datasets/cervical_sample_2.jpg',
+        caption: 'SIPaKMeD Pap Smear — Squamous Epithelial Isolated Cell Field',
+        tag: 'Epithelial Cell',
+      },
+    ],
   },
 
   // ─── Micro-OD Sub-Datasets (for backward compatibility & deep inspection) ─
@@ -189,7 +249,7 @@ export const DATASETS = [
     ],
     sampleImages: [
       {
-        url: '/samples/microscopy_cell_sample.jpg',
+        url: '/samples/datasets/bbbc_sample.jpg',
         caption: 'BBBC Fluorescence Microscopy - Blood Cell Specimen',
         tag: 'Exemplar Set',
       },
@@ -219,7 +279,7 @@ export const DATASETS = [
     ],
     sampleImages: [
       {
-        url: '/images/microscopy_field.jpg',
+        url: '/samples/datasets/bccd_sample.jpg',
         caption: 'BCCD Peripheral Cytology Smear Field',
         tag: 'Standard Evaluation',
       },
@@ -247,7 +307,13 @@ export const DATASETS = [
       'Polygonal Cells',
       'Round Cells',
     ],
-    sampleImages: [],
+    sampleImages: [
+      {
+        url: '/samples/datasets/livecell_sample.jpg',
+        caption: 'LIVECell Phase-Contrast Optical Specimen',
+        tag: 'Phase-Contrast',
+      },
+    ],
   },
   {
     id: 'NIH-3T3',
@@ -271,7 +337,13 @@ export const DATASETS = [
       'Polygonal Cells',
       'Round Cells',
     ],
-    sampleImages: [],
+    sampleImages: [
+      {
+        url: '/samples/datasets/nih3t3_sample.jpg',
+        caption: 'NIH-3T3 Fibroblast Phase-Contrast Culture',
+        tag: 'Culture Line',
+      },
+    ],
   },
 ]
 
