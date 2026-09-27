@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { setStoredToken, clearStoredToken, logoutUser } from '@/services/api'
+import { setStoredToken, clearStoredToken, logoutUser, verifyStoredToken } from '@/services/api'
 
 export const useAppStore = create(
   persist(
@@ -77,3 +77,23 @@ export const useAppStore = create(
     }
   )
 )
+
+// ─── Auto-logout on expired JWT ─────────────────────────────────────────────
+// When api.js detects a 401, it fires 'jd:auth-expired'.
+// We listen here to clear the store so the navbar shows "Sign In" immediately.
+if (typeof window !== 'undefined') {
+  window.addEventListener('jd:auth-expired', () => {
+    useAppStore.getState().logout()
+  })
+}
+
+// ─── Validate stored token on app start ─────────────────────────────────────
+// If the persisted isAuthenticated=true but the JWT has expired, auto-logout.
+export async function validateAuthOnStartup() {
+  const { isAuthenticated, logout } = useAppStore.getState()
+  if (!isAuthenticated) return
+  const valid = await verifyStoredToken()
+  if (!valid) {
+    logout()
+  }
+}

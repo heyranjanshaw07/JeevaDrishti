@@ -37,6 +37,28 @@ export function clearStoredToken() {
   setStoredToken(null)
 }
 
+/**
+ * Validate the stored token against the backend /auth/me endpoint.
+ * Returns true if the token is valid, false otherwise.
+ * If invalid, clears the stored token.
+ */
+export async function verifyStoredToken() {
+  const token = getStoredToken()
+  if (!token) return false
+  try {
+    const res = await fetch(`${BASE_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (res.ok) return true
+    // Token is expired or invalid — clear it
+    clearStoredToken()
+    return false
+  } catch {
+    // Network error — assume token might still be valid offline
+    return true
+  }
+}
+
 let tokenPromise = null
 
 /**
@@ -110,18 +132,14 @@ async function request(method, path, body = null, isFormData = false, withAuth =
     body: isFormData ? body : body ? JSON.stringify(body) : null,
   })
 
-  // If 401 on an authenticated request, attempt token renewal once
+  // If 401 on an authenticated request, clear auth state and notify the app
   if (res.status === 401 && withAuth) {
     clearStoredToken()
-    const newToken = await ensureSessionToken()
-    if (newToken) {
-      headers['Authorization'] = `Bearer ${newToken}`
-      res = await fetch(`${BASE_URL}${path}`, {
-        method,
-        headers,
-        body: isFormData ? body : body ? JSON.stringify(body) : null,
-      })
-    }
+    // Notify Zustand store to clear isAuthenticated so navbar shows "Sign In"
+    window.dispatchEvent(new CustomEvent('jd:auth-expired'))
+    const error = new Error('Session expired. Please sign in again.')
+    error.status = 401
+    throw error
   }
 
   if (!res.ok) {
