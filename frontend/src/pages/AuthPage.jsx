@@ -3,14 +3,14 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Mail, Lock, Eye, EyeOff, User, ArrowRight, ArrowLeft,
-  Sparkles, AlertCircle
+  AlertCircle
 } from 'lucide-react'
 
 import BiologicalIrisScene from '@/components/3d/BiologicalIrisScene'
 import MicroscopeLensTransition from '@/components/transitions/MicroscopeLensTransition'
 import { useAppStore } from '@/store/appStore'
 import { loginUser, signupUser } from '@/services/api'
-import { loadDemoAuthData } from '@/data/demoAuth'
+
 
 /**
  * Minimalist Logo Mark: Eye + Iris + Biological Cell
@@ -55,31 +55,7 @@ function JeevaDrishtiLogo({ size = 20, className = '' }) {
   )
 }
 
-/**
- * Official Google G SVG Icon
- */
-function GoogleIcon({ className = 'w-5 h-5' }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24">
-      <path
-        fill="#4285F4"
-        d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
-      />
-      <path
-        fill="#EA4335"
-        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-      />
-    </svg>
-  )
-}
+
 
 /**
  * AuthPage — Fullscreen Cinematic Iris Experience → Transition → Login
@@ -118,32 +94,24 @@ export default function AuthPage({ initialStage = 'eye', initialMode = 'login' }
   const [focusField, setFocusField] = useState(null) // null | 'email' | 'password'
   const [irisAnimState, setIrisAnimState] = useState('idle') // 'idle' | 'transition' | 'reverse-transition' | 'login' | 'signup'
 
-  // Form State: Initialize with location.state.demoData if present
+  // Form State
   const [formData, setFormData] = useState(() => ({
-    name: location.state?.demoData?.name || '',
-    email: location.state?.demoData?.email || '',
-    password: location.state?.demoData?.password || '',
-    confirmPassword: location.state?.demoData?.confirmPassword || '',
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
     rememberMe: true,
   }))
 
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [demoLoading, setDemoLoading] = useState(false)
+
   const [error, setError] = useState('')
   const [isTransitioning, setIsTransitioning] = useState(false)
   const pendingAuthData = useRef(null)
 
-  // Listen for navigation state carrying demo data
-  useEffect(() => {
-    if (location.state?.demoData) {
-      setFormData((prev) => ({
-        ...prev,
-        ...location.state.demoData,
-      }))
-    }
-  }, [location.state])
+
 
   // Redirect already authenticated users safely away from auth routes if not in active transition
   useEffect(() => {
@@ -221,33 +189,7 @@ export default function AuthPage({ initialStage = 'eye', initialMode = 'login' }
     setError('')
   }
 
-  // Quick Demo Auto-Fill
-  const handleAutoFillDemo = async () => {
-    if (demoLoading) return
 
-    setDemoLoading(true)
-    setError('')
-
-    try {
-      const demoData = await loadDemoAuthData(mode)
-
-      // Always populate the credentials into form state
-      setFormData((prev) => ({
-        ...prev,
-        ...demoData,
-      }))
-
-      // If clicked from Eye view, play forward transition into the login card
-      if (authStage === 'eye') {
-        handleEnterLogin()
-      }
-    } catch (err) {
-      console.error('Failed to load demo auth data:', err)
-      setError('Unable to load demo credentials. Please try again.')
-    } finally {
-      setDemoLoading(false)
-    }
-  }
 
   // Form Submission — triggers Iris Screen transition -> Microscope Lens transition -> Dashboard
   const handleSubmit = async (e) => {
@@ -391,17 +333,7 @@ export default function AuthPage({ initialStage = 'eye', initialMode = 'login' }
             </div>
           </Link>
 
-          {authStage !== 'transitioning-to-microscope' && (
-            <button
-              type="button"
-              onClick={handleAutoFillDemo}
-              disabled={demoLoading}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-mono text-white/80 hover:text-white transition-all cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <Sparkles size={13} className="text-crimson" />
-              <span>{demoLoading ? 'Loading Demo...' : 'Demo Fill'}</span>
-            </button>
-          )}
+
         </div>
 
         {/* 3D Biological Iris Canvas: Fullscreen Interactive Centerpiece */}
@@ -522,8 +454,8 @@ export default function AuthPage({ initialStage = 'eye', initialMode = 'login' }
             {/* Soft Ambient Card Radiance */}
             <div className="absolute -top-28 -right-28 w-64 h-64 bg-crimson/12 rounded-full blur-3xl pointer-events-none" />
 
-            {/* ─── Top Controls: Back Button & Demo Fill ───────────────────── */}
-            <div className="flex items-center justify-between mb-6">
+            {/* ─── Top Controls: Back Button ────────────────────────────── */}
+            <div className="flex items-center mb-6">
               {/* Subtle Back Button: Returns to Fullscreen Iris */}
               <button
                 type="button"
@@ -533,16 +465,6 @@ export default function AuthPage({ initialStage = 'eye', initialMode = 'login' }
               >
                 <ArrowLeft size={16} className="text-crimson group-hover:-translate-x-0.5 transition-transform" />
                 <span className="font-semibold text-sm">Back</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleAutoFillDemo}
-                disabled={demoLoading}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-sm font-mono text-white/80 hover:text-white transition-all cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <Sparkles size={14} className="text-crimson" />
-                <span>{demoLoading ? 'Loading Demo...' : 'Demo Fill'}</span>
               </button>
             </div>
 
@@ -723,26 +645,7 @@ export default function AuthPage({ initialStage = 'eye', initialMode = 'login' }
                     <span>{loading ? 'Authenticating Biological Gateway...' : 'Sign In'}</span>
                   </button>
 
-                  {/* Divider: OR */}
-                  <div className="relative my-4 flex items-center justify-center">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-white/[0.08]" />
-                    </div>
-                    <span className="relative px-3.5 bg-[#060205] text-xs font-mono font-semibold text-white/40 uppercase tracking-widest">
-                      OR
-                    </span>
-                  </div>
 
-                  {/* Secondary button: Continue with Google */}
-                  <button
-                    type="button"
-                    onClick={handleAutoFillDemo}
-                    disabled={demoLoading}
-                    className="w-full py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-sm sm:text-base font-mono font-semibold text-white flex items-center justify-center gap-3 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    <GoogleIcon />
-                    <span>{demoLoading ? 'Loading Demo...' : 'Continue with Google'}</span>
-                  </button>
 
                   {/* Bottom: Don't have an account? Create Account */}
                   <div className="pt-3 text-center text-sm sm:text-base text-text-secondary font-sans">
