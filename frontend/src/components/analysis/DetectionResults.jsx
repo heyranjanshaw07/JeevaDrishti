@@ -11,6 +11,7 @@ import { openAnalysisReport } from '@/services/api'
 import DetectionOverlay from './DetectionOverlay'
 import DetectionSummary from './DetectionSummary'
 import DetectionList from './DetectionList'
+import FewShotComparison from './FewShotComparison'
 
 /**
  * DetectionResults — Master Interface for Cell-Level Microscopy Inference
@@ -332,6 +333,15 @@ export default function DetectionResults({
 
       {/* ─── 4. RESULT SUMMARY (Four KPI Cards) ───────────────────────── */}
       <DetectionSummary metrics={results?.metrics} />
+
+      {/* ─── FEW-SHOT COMPARISON & REGIME SWITCHER ─────────────────────── */}
+      {isComplete && (
+        <FewShotComparison
+          selectedShot={shotMode}
+          onSelectShot={onShotModeChange}
+          shotMetrics={results?.shotMetrics}
+        />
+      )}
 
       {/* ─── 2. LARGE DETECTION VIEWER (With Dual State & Controls) ──── */}
       <GlassCard className="p-5 sm:p-6 border-white/[0.08]" glow>

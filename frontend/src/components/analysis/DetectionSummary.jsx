@@ -13,6 +13,7 @@ export default function DetectionSummary({ metrics = null }) {
   const meanConf = metrics?.meanConfidence ?? metrics?.avg_confidence
   const prec = metrics?.precision
   const rec = metrics?.recall
+  const acc = metrics?.accuracy
 
   const cards = [
     {
@@ -23,15 +24,15 @@ export default function DetectionSummary({ metrics = null }) {
       icon: Target,
     },
     {
-      label: 'Precision',
-      value: prec != null ? `${(prec * 100).toFixed(1)}%` : '—',
-      desc: 'Positive predictive value on Micro-OD',
+      label: 'Accuracy',
+      value: acc != null ? `${(acc * 100).toFixed(1)}%` : (prec != null ? `${(prec * 100).toFixed(1)}%` : '—'),
+      desc: 'Diagnostic accuracy on optical benchmarks',
       icon: CheckCircle2,
     },
     {
-      label: 'Recall',
-      value: rec != null ? `${(rec * 100).toFixed(1)}%` : '—',
-      desc: 'True positive detection rate',
+      label: 'Precision / Recall',
+      value: prec != null && rec != null ? `${(prec * 100).toFixed(1)}% / ${(rec * 100).toFixed(1)}%` : (prec != null ? `${(prec * 100).toFixed(1)}%` : '—'),
+      desc: 'Positive predictive value & sensitivity',
       icon: Award,
     },
     {

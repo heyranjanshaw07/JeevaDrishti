@@ -93,16 +93,29 @@ export default function FewShotComparison({
                   </p>
                 </div>
 
-                {/* Configuration Status (Empty State: 'Not evaluated') */}
-                <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[10px] font-mono">
-                  <span className="text-text-muted">Status</span>
-                  <span
-                    className={`font-semibold ${
-                      status !== 'Not evaluated' ? 'text-crimson' : 'text-white/40'
-                    }`}
-                  >
-                    {status}
-                  </span>
+                {/* Configuration Metrics & Status */}
+                <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono">
+                  {metric?.accuracy ? (
+                    <>
+                      <span className="text-text-muted">
+                        Accuracy: <strong className="text-white font-bold">{metric.accuracy}</strong>
+                      </span>
+                      <span className="text-crimson font-semibold">
+                        {metric.confidence ? `Conf: ${metric.confidence}` : status}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-text-muted">Status</span>
+                      <span
+                        className={`font-semibold ${
+                          status !== 'Not evaluated' ? 'text-crimson' : 'text-white/40'
+                        }`}
+                      >
+                        {status}
+                      </span>
+                    </>
+                  )}
                 </div>
               </GlassCard>
             </div>

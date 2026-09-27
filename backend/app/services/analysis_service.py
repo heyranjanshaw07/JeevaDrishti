@@ -366,6 +366,7 @@ def get_analysis_results(
         "avg_confidence": avg_conf if avg_conf is not None else metadata.get("avg_confidence"),
         "precision": metadata.get("precision"),
         "recall": metadata.get("recall"),
+        "accuracy": metadata.get("accuracy"),
         "mAP50": metadata.get("mAP50"),
         "inference_time_ms": metadata.get("inference_time_ms"),
         "vlm_calls": metadata.get("vlm_calls", len(boxes) if boxes else 0),

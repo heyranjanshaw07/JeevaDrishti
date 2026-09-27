@@ -83,7 +83,7 @@ class GeminiVLMProvider(VLMProvider):
                 parts.append({
                     "inline_data": {
                         "mime_type": "image/jpeg",
-                        "data": ex["image_b64"],
+                        "data": ex.get("image_b64") or ex.get("patch_b64", ""),
                     }
                 })
                 parts.append({"text": f"Ground-truth classification: {ex['label']}"})
@@ -191,9 +191,10 @@ class OpenAIVLMProvider(VLMProvider):
             for ex in few_shot_examples:
                 ex_id = ex.get("id", "exemplar")
                 content_parts.append({"type": "text", "text": f"Reference example for {ex['label']} [{ex_id}]:"})
+                b64_ex = ex.get("image_b64") or ex.get("patch_b64", "")
                 content_parts.append({
                     "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{ex['image_b64']}"},
+                    "image_url": {"url": f"data:image/jpeg;base64,{b64_ex}"},
                 })
 
         content_parts.append({"type": "text", "text": "Target cell to classify:"})
@@ -430,7 +431,8 @@ class MockVLMProvider(VLMProvider):
                 ex_id = ex.get("id") or f"{lbl}_{len(class_affinities)}"
                 if ex_id not in _EXEMPLAR_EMBEDDING_CACHE:
                     try:
-                        ex_bytes = base64.b64decode(ex["image_b64"])
+                        b64_str = ex.get("image_b64") or ex.get("patch_b64", "")
+                        ex_bytes = base64.b64decode(b64_str)
                         ex_img = Image.open(io.BytesIO(ex_bytes)).convert("RGB")
                         ex_arr = np.array(ex_img, dtype=np.float32)
                         _EXEMPLAR_EMBEDDING_CACHE[ex_id] = _extract_patch_embedding(ex_arr)
@@ -556,11 +558,17 @@ class MockVLMProvider(VLMProvider):
             best_cls = allowed_classes[0]
             best_sc = 0.66
             if class_affinities:
-                for cls, aff in class_affinities.items():
-                    if cls in allowed_classes and aff > best_sc:
-                        best_cls = cls
-                        best_sc = aff
-            return best_cls, round(float(min(0.95, max(0.65, best_sc))), 3)
+                sorted_aff = sorted(
+                    [(cls, aff) for cls, aff in class_affinities.items() if cls in allowed_classes],
+                    key=lambda x: x[1],
+                    reverse=True,
+                )
+                if sorted_aff:
+                    best_cls, best_aff = sorted_aff[0]
+                    calibrated_conf = 0.70 + max(0.0, (best_aff - 0.60)) * 0.72
+                    return best_cls, round(float(min(0.96, max(0.72, calibrated_conf))), 3)
+
+            return best_cls, 0.66
 
         # Non-cell candidate region rejected
         return "NOT_A_CELL", 0.0
