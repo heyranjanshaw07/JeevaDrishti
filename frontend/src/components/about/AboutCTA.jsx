@@ -48,14 +48,6 @@ export default function AboutCTA() {
               <BarChart3 className="w-4 h-4 text-[#FF2A55]" />
               Explore Benchmark
             </button>
-
-            <button
-              onClick={() => navigate('/dataset')}
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-white border border-white/10 font-semibold text-sm transition-all transform hover:-translate-y-0.5"
-            >
-              <Database className="w-4 h-4 text-[#FF2A55]" />
-              Explore Dataset
-            </button>
           </div>
         </motion.div>
       </div>

@@ -5,7 +5,7 @@ import { CheckCircle2, Clock, ShieldCheck } from 'lucide-react';
 const STATUS_ENTRIES = [
   { module: 'FRONTEND', status: 'READY', desc: 'Complete client interface & design system' },
   { module: 'RESEARCH UI', status: 'READY', desc: 'Research Hub & Scientific Insights explorer' },
-  { module: 'DATASET EXPLORER', status: 'READY', desc: 'Microscopy slide viewer & dataset catalog' },
+  { module: 'DATASET REPOSITORY', status: 'READY', desc: 'Internal multi-domain microscopy catalog' },
   { module: 'BENCHMARK UI', status: 'READY', desc: 'Experiment matrix & evaluation protocol view' },
   { module: 'AI INFERENCE', status: 'PENDING INTEGRATION', desc: 'SAM proposals + VLM GPU inference serving' },
   { module: 'BACKEND', status: 'PENDING INTEGRATION', desc: 'FastAPI microservices & async batch queue' }

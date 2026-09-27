@@ -10,8 +10,6 @@ import Register from '@/pages/Register'
 import Dashboard from '@/pages/Dashboard'
 import Analyze from '@/pages/Analyze'
 import Benchmark from '@/pages/Benchmark'
-import Dataset from '@/pages/Dataset'
-import DatasetDetailPage from '@/pages/DatasetDetailPage'
 import Research from '@/pages/Research'
 import Pipeline from '@/pages/Pipeline'
 import ResearchInsights from '@/pages/ResearchInsights'
@@ -62,11 +60,11 @@ export default function App() {
           {/* 6. Benchmark */}
           <Route path="/benchmark" element={<Benchmark />} />
 
-          {/* 7. Datasets */}
-          <Route path="/dataset" element={<Dataset />} />
-          <Route path="/datasets" element={<Dataset />} />
-          <Route path="/dataset/:datasetName" element={<DatasetDetailPage />} />
-          <Route path="/datasets/:datasetName" element={<DatasetDetailPage />} />
+          {/* 7. Datasets (Internal system component - redirect to dashboard) */}
+          <Route path="/dataset" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/datasets" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dataset/*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/datasets/*" element={<Navigate to="/dashboard" replace />} />
 
           {/* 8. Research, Pipeline & Insights */}
           <Route path="/research" element={<Research />} />

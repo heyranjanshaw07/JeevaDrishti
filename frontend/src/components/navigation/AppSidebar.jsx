@@ -22,9 +22,6 @@ function SidebarContent({ onMobileClose, statusText, shouldReduceMotion, isMobil
     if (exact || path === '/dashboard') {
       return location.pathname === path;
     }
-    if (path === '/dataset') {
-      return location.pathname.startsWith('/dataset') || location.pathname.startsWith('/datasets');
-    }
     if (path === '/benchmark') {
       return location.pathname.startsWith('/benchmark') || location.pathname.startsWith('/experiments');
     }

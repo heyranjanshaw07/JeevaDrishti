@@ -23,7 +23,6 @@ import AppSidebar from '@/components/navigation/AppSidebar'
 
 import {
   PROJECT_METRICS,
-  PROJECT_DATASET_ECOSYSTEM,
   PROJECT_VISION_PIPELINE,
   PROJECT_PIPELINE_STATUS,
   PROJECT_RESEARCH_INSIGHT,
@@ -1004,83 +1003,14 @@ export default function Dashboard() {
             transition={{ duration: 0.45, delay: 0.1, ease: 'easeOut' }}
             className="grid grid-cols-1 lg:grid-cols-12 gap-6"
           >
-            {/* 7. Dataset Snapshot / Dataset Ecosystem (Span 6) */}
-            <section id="dataset-snapshot" className="lg:col-span-6 space-y-3">
+            {/* Research Insight / Research Question (Full Span 12) */}
+            <section id="research-insight" className="lg:col-span-12 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono font-semibold tracking-wider text-text-muted uppercase">
-                  07 // DATASET ECOSYSTEM
-                </span>
-                <span className="text-[10px] font-mono text-white/50">BENCHMARK REPOSITORY</span>
-              </div>
-
-              <motion.div
-                whileHover={{ y: -3, transition: { duration: 0.2 } }}
-                className="p-6 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-white/[0.08] hover:border-crimson/35 hover:shadow-[0_12px_35px_rgba(255,42,85,0.14)] transition-all duration-300 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] mb-4">
-                    <div className="flex items-center gap-2">
-                      <Database size={16} className="text-crimson" />
-                      <h3 className="text-sm font-heading font-bold text-white">
-                        Supported Microscopy Suites
-                      </h3>
-                    </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-crimson/10 text-crimson border border-crimson/25">
-                      5 DATASETS · 21,756 IMAGES
-                    </span>
-                  </div>
-
-                  {/* 5 Clinical & Benchmark Datasets */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-                    {PROJECT_DATASET_ECOSYSTEM.map((ds) => (
-                      <div
-                        key={ds.id}
-                        className="p-3.5 rounded-2xl bg-black/40 border border-white/[0.06] hover:border-crimson/40 hover:bg-black/60 transition-all"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-heading font-extrabold text-white tracking-wide">
-                            {ds.id}
-                          </span>
-                          <span className="text-[10px] font-mono text-crimson font-semibold">
-                            {typeof ds.samples === 'number' ? ds.samples.toLocaleString() : ds.samples} imgs
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-white/75 line-clamp-1 mb-1 font-medium">
-                          {ds.name}
-                        </p>
-                        <span className="text-[10px] font-mono text-text-muted block truncate">
-                          {ds.modality}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between">
-                  <span className="text-xs font-mono text-text-muted">
-                    Total Catalog: <strong className="text-white">21,756 images</strong> (5,551+ verified annotations)
-                  </span>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    iconRight={ArrowRight}
-                    onClick={() => navigate('/datasets')}
-                    className="group hover:border-crimson/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
-                  >
-                    VIEW DATASETS →
-                  </Button>
-                </div>
-              </motion.div>
-            </section>
-
-            {/* 8. Research Insight / Research Question (Span 6) */}
-            <section id="research-insight" className="lg:col-span-6 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-semibold tracking-wider text-text-muted uppercase">
-                  08 // RESEARCH INSIGHT
+                  07 // RESEARCH INSIGHT & HYPOTHESIS
                 </span>
                 <span className="text-[10px] font-mono text-crimson bg-crimson/10 px-2 py-0.5 rounded border border-crimson/30 font-semibold">
-                  HYPOTHESIS
+                  FEW-SHOT VLM FOUNDATION
                 </span>
               </div>
 
@@ -1096,7 +1026,7 @@ export default function Dashboard() {
                         {PROJECT_RESEARCH_INSIGHT.tag}
                       </h3>
                     </div>
-                    <span className="text-[10px] font-mono text-white/50">FEW-SHOT VLM</span>
+                    <span className="text-[10px] font-mono text-white/50">VISION-LANGUAGE PROTOCOL</span>
                   </div>
 
                   {/* Explicit Research Question */}
@@ -1104,7 +1034,7 @@ export default function Dashboard() {
                     "{PROJECT_RESEARCH_INSIGHT.question}"
                   </blockquote>
 
-                  <p className="text-xs text-text-secondary leading-relaxed mb-4">
+                  <p className="text-xs sm:text-sm text-text-secondary leading-relaxed mb-4 max-w-4xl">
                     {PROJECT_RESEARCH_INSIGHT.abstract}
                   </p>
                 </div>

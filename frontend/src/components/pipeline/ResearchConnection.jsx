@@ -11,9 +11,9 @@ const RESEARCH_STATS = [
     icon: Microscope
   },
   {
-    val: '4',
-    label: 'Source Datasets',
-    sub: 'BCCD, Blood Cell, Bone Marrow, Malaria',
+    val: '5',
+    label: 'Imaging Modalities',
+    sub: 'Hematology, Cytology, Parasitology, Oncology',
     icon: Database
   },
   {
@@ -97,14 +97,6 @@ export default function ResearchConnection() {
               <BarChart3 className="w-4 h-4" />
               Open Benchmark
               <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => navigate('/dataset')}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-white/80 hover:text-white border border-white/10 font-semibold text-sm transition-all"
-            >
-              <Database className="w-4 h-4" />
-              Explore Dataset
             </button>
           </div>
         </div>

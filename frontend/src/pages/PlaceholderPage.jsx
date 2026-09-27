@@ -19,7 +19,6 @@ const ALL_ROUTES = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/analyze', label: 'Analyze', icon: ScanLine },
   { path: '/benchmark', label: 'Benchmark', icon: BarChart3 },
-  { path: '/dataset', label: 'Datasets', icon: Database },
   { path: '/research', label: 'Research', icon: BookOpen },
   { path: '/experiments', label: 'Experiments', icon: FlaskConical },
   { path: '/settings', label: 'Settings', icon: Settings },

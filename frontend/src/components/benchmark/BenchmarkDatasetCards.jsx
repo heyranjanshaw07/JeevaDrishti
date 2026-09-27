@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
-import { ArrowUpRight, Database, Box, Tag, Images } from 'lucide-react'
+import { Database, Box, Tag, Images } from 'lucide-react'
 import GlassCard from '@/components/ui/GlassCard'
 
 const DATASETS = [
@@ -147,17 +146,6 @@ export default function BenchmarkDatasetCards() {
                     <span className="block text-[11px] font-mono text-text-muted">Types</span>
                   </div>
                 </div>
-              </div>
-
-              {/* View Dataset Link Button */}
-              <div className="mt-5 pt-3 border-t border-white/[0.05]">
-                <Link
-                  to="/datasets"
-                  className="w-full py-2.5 px-3 rounded-lg bg-white/[0.03] hover:bg-crimson/15 border border-white/[0.08] hover:border-crimson/40 text-sm font-mono text-white/80 hover:text-white flex items-center justify-between transition-all duration-200 group/btn"
-                >
-                  <span className="font-semibold tracking-wide">View Dataset</span>
-                  <ArrowUpRight size={14} className="text-crimson group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
-                </Link>
               </div>
             </GlassCard>
           </motion.div>

@@ -17,7 +17,7 @@ export const PROJECT_METRICS = [
     id: 'images',
     label: 'MICROSCOPY IMAGES',
     value: '21,756',
-    description: 'Across 5 clinical suites & benchmark',
+    description: 'Optical multi-domain repository',
   },
   {
     id: 'cells',
@@ -26,10 +26,10 @@ export const PROJECT_METRICS = [
     description: 'Test-set & clinical annotations',
   },
   {
-    id: 'datasets',
-    label: 'SUPPORTED DATASETS',
+    id: 'modalities',
+    label: 'CLINICAL MODALITIES',
     value: '5',
-    description: 'Leukemia · Cervical · Malaria · Micro-OD · SCD',
+    description: 'Hematology · Cytology · Parasitology · Oncology',
   },
   {
     id: 'shots',

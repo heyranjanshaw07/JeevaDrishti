@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
-import { BarChart3, Database, ArrowRight } from 'lucide-react'
+import { BarChart3, ScanLine, ArrowRight } from 'lucide-react'
 import GlassCard from '@/components/ui/GlassCard'
 
 /**
- * ResearchCTA — Dual CTA section navigating to Benchmark and Dataset Explorer
+ * ResearchCTA — Dual CTA section navigating to Benchmark and Analysis Engine
  */
 export default function ResearchCTA() {
   return (
@@ -33,27 +33,27 @@ export default function ResearchCTA() {
         </Link>
       </GlassCard>
 
-      {/* Dataset Explorer CTA */}
+      {/* Analysis Engine CTA */}
       <GlassCard hover className="p-6 sm:p-7 border-white/[0.08] hover:border-crimson/40 transition-all flex flex-col justify-between group">
         <div className="space-y-3 mb-5">
           <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.1] flex items-center justify-center text-white">
-            <Database size={18} />
+            <ScanLine size={18} />
           </div>
           <div>
             <h3 className="text-xl font-heading font-extrabold text-white tracking-tight group-hover:text-crimson transition-colors">
-              Explore the Datasets
+              Run Cell Analysis
             </h3>
             <p className="text-xs sm:text-sm text-text-secondary mt-1 leading-relaxed font-sans">
-              Browse the microscopy datasets used throughout the JeevaDrishti research workflow.
+              Upload a microscopy specimen to test zero-shot adaptive bounding box detection.
             </p>
           </div>
         </div>
 
         <Link
-          to="/dataset"
+          to="/analyze"
           className="w-full py-2.5 px-4 rounded-xl bg-white/[0.04] hover:bg-crimson text-white border border-white/[0.12] hover:border-crimson text-xs font-mono font-bold tracking-wide flex items-center justify-between transition-all group/btn"
         >
-          <span>Open Dataset Explorer</span>
+          <span>Open Analysis Engine</span>
           <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
         </Link>
       </GlassCard>

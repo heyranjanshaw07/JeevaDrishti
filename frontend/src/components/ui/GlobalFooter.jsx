@@ -54,11 +54,6 @@ export default function GlobalFooter({ className = '' }) {
                 Research Benchmark
               </Link>
             </li>
-            <li>
-              <Link to="/dataset" className="hover:text-[#FF2A55] transition-colors">
-                Dataset Explorer
-              </Link>
-            </li>
           </ul>
         </div>
 

@@ -10,7 +10,6 @@ const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Overview', path: '/dashboard' },
   { icon: ScanLine, label: 'Analyze', path: '/analyze' },
   { icon: BarChart2, label: 'Benchmark', path: '/benchmark' },
-  { icon: Database, label: 'Datasets', path: '/datasets' },
   { icon: FlaskConical, label: 'Experiments', path: '/dashboard' },
   { icon: BookOpen, label: 'Research', path: '/research' },
   { icon: Settings, label: 'Settings', path: '/settings' },
